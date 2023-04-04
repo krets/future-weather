@@ -26,6 +26,7 @@
     <script>
 const green = "#73bf69";
 const red = "#ff5285";
+const yellow = "#bfac69";
 function reload_graph(){
     const now = new Date();
     for (const title of ['pressure', 'wind']){
@@ -40,7 +41,7 @@ function reload_graph(){
         // console.log(filteredData[filteredData.length-1]);
 
         // Set up the SVG element and scales
-        const margin = { top: 32, right: 12, bottom: 24, left: 24 };
+        const margin = { top: 48, right: 12, bottom: 24, left: 24 };
         const width = 950 - margin.left - margin.right;
         const height = 269 - margin.top - margin.bottom;
 
@@ -162,7 +163,7 @@ function reload_graph(){
           .datum(data_future)
           .attr("class", "dashed")
           .attr('fill', 'none')
-          .attr('stroke', green)
+          .attr('stroke', yellow)
           .attr('stroke-width', 2)
           .attr('d', line);
 
@@ -185,7 +186,7 @@ function reload_graph(){
           .datum(data_future)
           .attr("class", "area")
           .attr("d", area)
-          .style("fill", green)
+          .style("fill", yellow)
           .style("fill-opacity", 0.1);
 
         svg.append('line')
@@ -238,7 +239,7 @@ function reload_graph(){
 
         svg.append('text')
           .attr('x', width / 2)
-          .attr('y', -10)
+          .attr('y', -24)
           .attr('text-anchor', 'middle')
           .style('font-size', '14px')
           .style('fill', '#ccc')
