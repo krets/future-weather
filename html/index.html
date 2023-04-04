@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Future Weather</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <p>Pressure and Wind prediction for Berlin Treptow</span></p>
+    <img id="dog_icon" src="./dog_head.png" alt="doggo">
+    <svg id="pressure" width="950" height="269"></svg>
+    <svg id="wind" width="950" height="269"></svg>
+    <div id="updated_info"></div>
+
+  <div class="change-log">
+  <span class="recent">Recent Changes </span><span class="info-icon">?</span>
+  <div class="change-log-popup">
+    <h2>Change Log</h2>
+    <ul>
+      <li>2023-04-02: Now rendering graphs using D3.js and SVGs. This is much faster on mobile devices. The source data is now coming from yr.no with a 12h prediction</li>
+      <li>2023-03-25: Created a merged graph extending the recorded data with the 12 hour prediction.</li>
+      <li>2023-03-15: Show pressure and wind, past and future graphs.</li>
+    </ul>
+  </div>
+</div>
+    <script>
+const green = "#73bf69";
+const red = "#ff5285";
+function reload_graph(){
+    const now = new Date();
+    for (const title of ['pressure', 'wind']){
+      d3.json(`${title}_data.json?t=${now.getTime()}`).then(data => {
+
+        // Parse the epoch timestamp and value strings into numbers
+        const parsedData = data.map(([timestamp, value]) => [Number(timestamp) * 1000, Number(value)]);
+        // const filteredData = parsedData.filter(d => d[0] >= now && d[0] <= twentyMinutesFromNow);
+        if(title === 'pressure'){
+
+        }
+        // console.log(filteredData[filteredData.length-1]);
+
+        // Set up the SVG element and scales
+        const margin = { top: 32, right: 12, bottom: 24, left: 24 };
+        const width = 950 - margin.left - margin.right;
+        const height = 269 - margin.top - margin.bottom;
+
+
+        // select the SVG element
+        let svg = d3.select(`#${title}`);
+
+        // remove all elements inside the SVG
+        svg.selectAll('*').remove();
+
+        svg = d3.select(`#${title}`).attr('width', width + margin.left + margin.right)
+          .attr('height', height + margin.top + margin.bottom)
+          // .style('background-color', '#333')
+          .append('g')
+          .attr('transform', `translate(${margin.left},${margin.top})`);
+        svg.selectAll('*').remove();
+
+        const x = d3.scaleTime()
+          .domain(d3.extent(parsedData, d => d[0]))
+          .range([0, width]);
+
+        const y = d3.scaleLinear()
+            .range([height, 0]);
+        if (title === 'pressure'){
+          y.domain([-4, 4]);  
+        }else{
+          y.domain([0, 12]);  
+        }
+
+        let tickValues = null;
+        if(title === 'pressure'){
+          tickValues = [-4,-2,0,2,4]
+
+          // Draw the threshold markers
+          svg.append('rect')
+            .attr('x', 0)
+            .attr('y', y(4))
+            .attr('width', width)
+            .attr('height', y(2) - y(4))
+            .attr('fill', 'red')
+            .attr('opacity', 0.15);
+          svg.append('rect')
+            .attr('x', 0)
+            .attr('y', y(-2))
+            .attr('width', width)
+            .attr('height', y(-4) - y(-2))
+            .attr('fill', 'red')
+            .attr('opacity', 0.15);
+
+          // Set the favicon
+          const later = new Date();
+          later.setTime(now.getTime() + 10 * 60 * 1000);
+          const filteredData = parsedData.filter(d => d[0] >= now && d[0] < later && (d[1] > 2 || d[1] < -2));
+          if (filteredData.length > 0){
+            set_icon_color(red);
+          }else{
+            set_icon_color(green);
+          }
+          console.log("Alarm data points from now to later: " + filteredData.length);
+
+        }else{
+
+          // Draw the threshold markers for Wind
+          svg.append('rect')
+            .attr('x', 0)
+            .attr('y', y(12))
+            .attr('width', width)
+            .attr('height', y(1)-y(4))
+            .attr('fill', 'red')
+            .attr('opacity', 0.15);
+        }
+
+        // Draw the grid lines
+        const xGrid = d3.axisBottom(x)
+          .tickSize(-height)
+          .tickFormat('');
+        const yGrid = d3.axisLeft(y)
+          .tickValues(tickValues)
+          .tickSize(-width)
+          .tickFormat('');
+        svg.append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0,${height})`)
+          .call(xGrid);
+        svg.append('g')
+          .attr('class', 'grid')
+          .call(yGrid);
+
+        if(title==="pressure"){
+          svg.append('line')
+            .attr('x1', 0)
+            .attr('y1', height/2)
+            .attr('x2', width)
+            .attr('y2', height/2)
+            .attr('stroke', "#aaa")
+            .attr('stroke-width', 1);
+        }
+
+        const data_past = parsedData.filter(d=>d[0] <= now.getTime());
+        const data_future = parsedData.filter(d=>d[0] > now.getTime());
+
+        // Draw the line
+        const line = d3.line()
+          .x(d => x(d[0]))
+          .y(d => y(d[1]));
+        svg.append('path')
+          .datum(data_past)
+          .attr("class", "line")
+          .attr('fill', 'none')
+          .attr('stroke', green)
+          .attr('stroke-width', 2)
+          .attr('d', line);
+
+        // Draw the line
+        const line_future = d3.line()
+          .x(d => x(d[0]))
+          .y(d => y(d[1]));
+        svg.append('path')
+          .datum(data_future)
+          .attr("class", "dashed")
+          .attr('fill', 'none')
+          .attr('stroke', green)
+          .attr('stroke-width', 2)
+          .attr('d', line);
+
+
+        // Define the area generator
+        const area = d3.area()
+          .x(d => x(d[0]))
+          .y0(y(0))
+          .y1(d => y(d[1]));
+
+        // Draw the area
+        svg.append("path")
+          .datum(data_past)
+          .attr("class", "area")
+          .attr("d", area)
+          .style("fill", green)
+          .style("fill-opacity", 0.2);
+        // Draw the area
+        svg.append("path")
+          .datum(data_future)
+          .attr("class", "area")
+          .attr("d", area)
+          .style("fill", green)
+          .style("fill-opacity", 0.1);
+
+        svg.append('line')
+          .attr('x1', x(now))
+          .attr('y1', -5)
+          .attr('x2', x(now))
+          .attr('y2', height)
+          .attr('stroke', 'lightblue')
+          .attr('stroke-width', 2);
+
+        svg.append('text')
+          .attr('x', x(now))
+          .attr('y', -10)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '7pt')
+          .style('fill', 'lightblue')
+          .text(`now`);
+
+
+        // Draw the x and y axes
+        const xAxis = d3.axisBottom(x)
+          .tickFormat(d3.timeFormat('%H:%M'))
+          .tickSizeOuter(0);
+        const yAxis = d3.axisLeft(y)
+          .tickValues(tickValues)
+          .tickSizeOuter(0);
+        svg.append('g')
+          .attr('class', 'x-axis')
+          .attr('transform', `translate(0,${height})`)
+          .call(xAxis)
+          .selectAll('text')
+          .style('fill', '#ddd');
+
+        svg.append('g')
+          .attr('class', 'y-axis')
+          .call(yAxis)
+          .selectAll('text, path, line')
+          .style('fill', green)
+          .style('stroke', green)
+          .style('stroke-width', 2);
+        svg.selectAll("g.y-axis text")
+           .style("stroke-width", null);
+        // svg.append("text")
+        // .attr("class", "y-axis-label")
+        // .attr("text-anchor", "middle")
+        // .attr("transform", `rotate(-90) translate(${-height/2},${-margin.left+20})`)
+        // .text("Y Axis Label");
+
+        svg.append('text')
+          .attr('x', width / 2)
+          .attr('y', -10)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .style('fill', '#ccc')
+          .text(`${title} + 12h prediction`);
+      });
+      let updatedInfo = document.getElementById("updated_info");
+      updatedInfo.innerHTML = "Updated " + now.toLocaleString();
+    }
+  }
+function set_icon_color(fill="#ccc"){
+    // Get the link element
+    const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+    if(link.parentNode === null){ 
+        document.getElementsByTagName('head')[0].appendChild(link);
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+    }
+
+    const dog_icon = document.getElementById('dog_icon');
+    
+    // Create a new canvas element with the updated image data
+    const canvas_icon = document.createElement('canvas');
+    canvas_icon.width = 16;
+    canvas_icon.height = 16;
+    const ctx_icon = canvas_icon.getContext('2d');
+    ctx_icon.fillStyle = fill;
+    ctx_icon.fillRect(0, 0, 16, 16);
+
+    // Set the blending mode to "multiply"
+    ctx_icon.globalCompositeOperation = 'multiply';
+
+    // Draw the second image onto the canvas
+    ctx_icon.drawImage(dog_icon, 0, 1);
+
+    // Update the href attribute of the link element with the new canvas_icon data URL
+    link.href = canvas_icon.toDataURL('image/x-icon');
+    console.log('updated icon (color: '+fill+')');
+}
+reload_graph();
+set_icon_color();
+setInterval(reload_graph, 30000);
+    </script>
+  </body>
+</html>
+
