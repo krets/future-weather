@@ -7,9 +7,10 @@
   </head>
   <body>
     <p>Pressure and Wind prediction for Berlin Treptow</span></p>
-    <img id="dog_icon" src="./dog_head.png" alt="doggo">
+    <img id="dog_icon" src="./doggo.png" alt="doggo">
     <svg id="pressure" width="950" height="269"></svg>
     <svg id="wind" width="950" height="269"></svg>
+    <svg id="temperature" width="950" height="269"></svg>
     <div id="updated_info"></div>
 
   <div class="change-log">cd
@@ -17,6 +18,7 @@
   <div class="change-log-popup">
     <h2>Change Log</h2>
     <ul>
+      <li>2023-04-07: Adding temperature outlook</li>
       <li>2023-04-02: Now rendering graphs using D3.js and SVGs. This is much faster on mobile devices. The source data is now coming from yr.no with a 12h prediction</li>
       <li>2023-03-25: Created a merged graph extending the recorded data with the 12 hour prediction.</li>
       <li>2023-03-15: Show pressure and wind, past and future graphs.</li>
@@ -29,7 +31,7 @@ const red = "#ff5285";
 const yellow = "#bfac69";
 function reload_graph(){
     const now = new Date();
-    for (const title of ['pressure', 'wind']){
+    for (const title of ['pressure', 'wind', 'temperature']){
       d3.json(`${title}_data.json?t=${now.getTime()}`).then(data => {
 
         // Parse the epoch timestamp and value strings into numbers
@@ -67,8 +69,12 @@ function reload_graph(){
             .range([height, 0]);
         if (title === 'pressure'){
           y.domain([-4, 4]);  
-        }else{
+        }else if (title === 'wind'){
           y.domain([0, 12]);  
+        }else {
+          var minY = d3.min(parsedData, function(d) { return d[1]; });
+          var maxY = d3.max(parsedData, function(d) { return d[1]; });
+          y.domain([minY, maxY]);
         }
 
         let tickValues = null;
@@ -102,7 +108,7 @@ function reload_graph(){
           }
           console.log("Alarm data points from now to later: " + filteredData.length);
 
-        }else{
+        }else if(title==="wind"){
 
           // Draw the threshold markers for Wind
           svg.append('rect')
@@ -112,6 +118,10 @@ function reload_graph(){
             .attr('height', y(1)-y(4))
             .attr('fill', 'red')
             .attr('opacity', 0.15);
+        }else if (title === 'temperature'){
+          let minY = y.domain()[0];
+          let maxY = y.domain()[1];
+
         }
 
         // Draw the grid lines
@@ -143,25 +153,47 @@ function reload_graph(){
         const data_past = parsedData.filter(d=>d[0] <= now.getTime());
         const data_future = parsedData.filter(d=>d[0] > now.getTime());
 
-        // Draw the line
+        // Draw the past line
         const line = d3.line()
           .x(d => x(d[0]))
           .y(d => y(d[1]));
-        svg.append('path')
+
+        if (title==='SKIP-temperature'){
+          // Define a linear color scale
+          var colorScale = d3.scaleLinear()
+            .domain([0, 20, 28, 33])  // Define the y-value breakpoints
+            .range(["blue", "green", "yellow", "red"])
+
+          svg.append("path")
           .datum(data_past)
           .attr("class", "line")
-          .attr('fill', 'none')
-          .attr('stroke', green)
-          .attr('stroke-width', 2)
-          .attr('d', line);
+          .attr("d", line)
+          .style("stroke", function(d) { return colorScale(d[1]); });
 
-        // Draw the line
+          // var path = d3.select('#temperature-past-path');
+          // path.attr('stroke-width', 20)
+          //   .attr('stroke', d => colorScale(d[1]))
+
+        }else{
+          svg.append('path')
+          .datum(data_past)
+          .attr('id', `${title}-past-path`)
+          .attr("class", "line")
+          .attr('fill', 'none')
+          .attr('stroke-width', 2)
+          .attr('d', line)
+          // .style('stroke', green)
+
+        }
+
+        // Draw the future line
         const line_future = d3.line()
           .x(d => x(d[0]))
           .y(d => y(d[1]));
         svg.append('path')
           .datum(data_future)
           .attr("class", "dashed")
+          .attr('id', `${title}-future-path`)
           .attr('fill', 'none')
           .attr('stroke', yellow)
           .attr('stroke-width', 2)
@@ -177,17 +209,15 @@ function reload_graph(){
         // Draw the area
         svg.append("path")
           .datum(data_past)
+          .attr('id', `${title}-past-area`)
           .attr("class", "area")
           .attr("d", area)
-          .style("fill", green)
-          .style("fill-opacity", 0.2);
         // Draw the area
         svg.append("path")
           .datum(data_future)
+          .attr('id', `${title}-future-area`)
           .attr("class", "area")
           .attr("d", area)
-          .style("fill", yellow)
-          .style("fill-opacity", 0.1);
 
         svg.append('line')
           .attr('x1', x(now))
@@ -221,11 +251,11 @@ function reload_graph(){
           .style('fill', '#ddd');
 
         svg.append('g')
-          .attr('class', 'y-axis')
+          .attr('class', 'y-axis '+title)
           .call(yAxis)
           .selectAll('text, path, line')
-          .style('fill', green)
-          .style('stroke', green)
+          // .style('fill', green)
+          // .style('stroke', green)
           .style('stroke-width', 2);
         svg.selectAll("g.y-axis text")
            .style("stroke-width", null);
@@ -280,7 +310,7 @@ function set_icon_color(fill="#ccc"){
 }
 reload_graph();
 set_icon_color();
-setInterval(reload_graph, 30000);
+setInterval(reload_graph, 300000);
     </script>
   </body>
 </html>

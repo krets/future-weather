@@ -64,3 +64,54 @@ svg {
 .dashed {
   stroke-dasharray: 5,5;
 }
+#temperature-past-path.line {
+  stroke: #d2a923;
+}
+#pressure-past-path.line {
+  stroke: #94c938;
+}
+#wind-past-path.line {
+  stroke: #5db5c4;
+}
+.area {
+  fill-opacity: 0.15;
+  fill: #9d9d57;
+}
+#temperature-past-area.area {
+  fill: #a29055;
+}
+#pressure-past-area.area {
+  fill: #5fce43;
+}
+#wind-past-area.area {
+  fill: #5db5c4;
+}
+
+.y-axis.temperature {
+  stroke: #d2a923;
+  fill: #d2a923;
+  color: #d2a923;
+  stroke-width: 1;
+}
+.y-axis.wind {
+  stroke: #5db5c4;
+  fill: #5db5c4;
+  color: #5db5c4;
+  stroke-width: 1;
+}
+.y-axis.pressure {
+  stroke: #94c938;
+  fill: #94c938;
+  color: #94c938;
+  stroke-width: 1;
+}
+
+/*.y-axis, .y-axis.line, .y-axis.path {*/
+/*  fill: green;*/
+/*  stroke: green;*/
+/*  stroke-width: 1;*/
+/*}*/
+/*.y-axis.text {*/
+
+/*  stroke-width: 1;*/
+/*}*/

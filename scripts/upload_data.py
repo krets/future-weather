@@ -15,23 +15,29 @@ def query(step, hours, base_url, target):
     now = int(time.time())
     yesterday = now - 24 * 60 * 60
 
+    data = {}
     LOG.info("Pressure query")
     queries = [('avg(deriv(bmp280_pressure[4h]))*4*60*60', yesterday, now)]
     queries.extend(build_prediction_queries('avg(deriv(yrno_air_pressure_at_sea_level{hours="%s"}[4h] offset %sh))*4*60*60', hours))
-    pressure_data = run_queries(base_url, queries, step)
+    data['pressure'] = run_queries(base_url, queries, step)
 
     LOG.info("Wind query")
     wind_queries = [('openweather_windspeed', yesterday, now)]
     wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s"} offset %sh', hours))
-    wind_data = run_queries(base_url, wind_queries, step)
+    data['wind'] = run_queries(base_url, wind_queries, step)
+
+    LOG.info("Temperature query")
+    temp_queries = [('yrno_air_temperature{hours="0"}', yesterday, now)]
+    temp_queries.extend(build_prediction_queries('yrno_air_temperature{hours="%s"} offset %sh', hours))
+    data['temperature'] = run_queries(base_url, temp_queries, step)
 
     LOG.info("Uploading json data files")
-    for name, data in [('wind', wind_data), ('pressure', pressure_data)]:
+    for name, values in data.items():
         data_file = "%s_data.json" % name
         with open(data_file, 'w') as fh:
-            json.dump(data, fh)
+            json.dump(values, fh)
         LOG.debug("Dumped: %s", data_file)
-        cmd = ["/usr/bin/scp", "-q", data_file, target+"/%s" % data_file]
+        cmd = ["scp", "-q", data_file, target+"/%s" % data_file]
         subprocess.run(cmd)
 
 
@@ -49,12 +55,12 @@ def run_queries(base_url, queries, step=60):
     return data
 
 
-def build_prediction_queries(template, hours):
+def build_prediction_queries(template, hours, index_offset=1):
     LOG.debug("Creating prediction queries for %d hours", hours)
     now = int(time.time())
     queries = []
     for i in range(hours):
-        hour = i + 1
+        hour = i + index_offset
         queries.append((
             template % (hour, hour),
             now + i * 60 * 60,
