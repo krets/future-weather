@@ -30,6 +30,12 @@
 const green = "#73bf69";
 const red = "#ff5285";
 const yellow = "#bfac69";
+const units = {
+  temperature: '°C',
+  pressure: 'Delta hPa/4h',
+  wind: 'm/s'
+}
+
 function reload_graph(){
     const now = new Date();
     for (const title of ['pressure', 'wind', 'temperature']){
@@ -291,7 +297,7 @@ function reload_graph(){
           .attr('text-anchor', 'middle')
           .style('font-size', '14px')
           .style('fill', '#ccc')
-          .text(`${title} + ${hours_ahead}h prediction`);
+          .text(`${title} (${units[title]}) + ${hours_ahead}h prediction`);
       });
       let updatedInfo = document.getElementById("updated_info");
       updatedInfo.innerHTML = "Updated " + now.toLocaleString();
