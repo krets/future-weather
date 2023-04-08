@@ -3,7 +3,7 @@
 <head>
   <title>Future Weather</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?_=20230408">
   </head>
   <body>
     <p>Pressure and Wind prediction for Berlin Treptow</span></p>
@@ -18,6 +18,7 @@
   <div class="change-log-popup">
     <h2>Change Log</h2>
     <ul>
+      <li>2023-04-08: Changed colors for graphs</li>
       <li>2023-04-07: Adding temperature outlook</li>
       <li>2023-04-02: Now rendering graphs using D3.js and SVGs. This is much faster on mobile devices. The source data is now coming from yr.no with a 12h prediction</li>
       <li>2023-03-25: Created a merged graph extending the recorded data with the 12 hour prediction.</li>
@@ -119,9 +120,26 @@ function reload_graph(){
             .attr('fill', 'red')
             .attr('opacity', 0.15);
         }else if (title === 'temperature'){
-          let minY = y.domain()[0];
-          let maxY = y.domain()[1];
+          let yMin = y.domain()[0];
+          let yMax = y.domain()[1];
+          const temperatureColors = ['#BFEFFF', '#00CC99', '#FFD966', '#FF6666', '#FF1493', 'red'];
+          const start = -10;
+          const step = 10;
 
+          for (let i = 0; i < temperatureColors.length; i++) {
+            const baseVal = i * step + start;
+            if (yMin < baseVal && baseVal < yMax || yMin < baseVal + step && baseVal + step < yMax) {
+              let rtop = Math.min(yMax, baseVal+step);
+              let rbot = Math.max(yMin, baseVal);
+              svg.append('rect')
+                .attr('x', 0)
+                .attr('y', y(rtop))
+                .attr('width', width)
+                .attr('height', y(rbot) - y(rtop))
+                .attr('fill', temperatureColors[i])
+                .attr('opacity', 0.08);
+            }
+          }
         }
 
         // Draw the grid lines
