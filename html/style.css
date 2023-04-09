@@ -1,3 +1,4 @@
+/* General */
 body {
   background-color: #333;
   color: #ccc;
@@ -9,9 +10,13 @@ svg {
   background-color: #181c20;
   margin: .5em;
 }
+
+/* Dog icon */
 #dog_icon {
   display:none;
 }
+
+/* Axes */
 .y-axis-label {
   font-size: 12px;
   font-weight: bold;
@@ -21,11 +26,12 @@ svg {
   color: #444;
 }
 
+/* Info and changelog */
 #updated_info {
   font-size: 80%;
 }
 .recent {
-  font-style:italic;
+  font-style: italic;
   font-size: 12px;
   color: #999;
 }
@@ -41,7 +47,7 @@ svg {
   top: 20px;
   left: 20px;
   padding: 10px;
-/*  background-color: #ffffff;*/
+  /*background-color: #ffffff;*/
   border: 1px solid #111;
   z-index: 1;
 }
@@ -61,9 +67,13 @@ svg {
   background-color: #2222c8;
   cursor: pointer;
 }
+
+/* Dashed line */
 .dashed {
   stroke-dasharray: 5,5;
 }
+
+/* Lines */
 #temperature-past-path.line {
   stroke: #d2a923;
 }
@@ -73,6 +83,8 @@ svg {
 #wind-past-path.line {
   stroke: #5db5c4;
 }
+
+/* Areas */
 .area {
   fill-opacity: 0.15;
   fill: #9d9d57;
@@ -87,6 +99,7 @@ svg {
   fill: #5db5c4;
 }
 
+/* Y axes */
 .y-axis.temperature {
   stroke: #d2a923;
   fill: #d2a923;
@@ -106,16 +119,7 @@ svg {
   stroke-width: 1;
 }
 
-/*.y-axis, .y-axis.line, .y-axis.path {*/
-/*  fill: green;*/
-/*  stroke: green;*/
-/*  stroke-width: 1;*/
-/*}*/
-/*.y-axis.text {*/
-
-/*  stroke-width: 1;*/
-/*}*/
-
+/* Footer */
 footer {
   padding: 20px;
 }
