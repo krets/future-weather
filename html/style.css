@@ -115,3 +115,15 @@ svg {
 
 /*  stroke-width: 1;*/
 /*}*/
+
+footer {
+  padding: 20px;
+}
+
+footer p {
+  font-size: small;
+  color: #888888;
+}
+footer a {
+  color: #fc0;
+}
