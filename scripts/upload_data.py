@@ -31,6 +31,12 @@ def query(step, hours, base_url, target):
     temp_queries.extend(build_prediction_queries('yrno_air_temperature{hours="%s"} offset %sh', hours))
     data['temperature'] = run_queries(base_url, temp_queries, step)
 
+
+    LOG.info("Precipitation query")
+    prec_queries = [('yrno_precipitation_amount{hours="0"}', yesterday, now)]
+    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s"} offset %sh', hours))
+    data['precipitation'] = run_queries(base_url, prec_queries, step)
+
     LOG.info("Uploading json data files")
     for name, values in data.items():
         data_file = "%s_data.json" % name
