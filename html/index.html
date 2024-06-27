@@ -17,6 +17,7 @@
     <svg id="pressure" width="950" height="269"></svg>
     <svg id="wind" width="950" height="269"></svg>
     <svg id="temperature" width="950" height="269"></svg>
+    <svg id="precipitation" width="950" height="269"></svg>
     <div id="updated_info"></div>
   <div class="change-log">
   <span class="recent">Recent Changes </span><span class="info-icon">?</span>
@@ -42,12 +43,13 @@ const yellow = "#bfac69";
 const units = {
   temperature: '°C',
   pressure: 'Delta hPa/4h',
-  wind: 'm/s'
+  wind: 'm/s',
+  precipitation: 'mm'
 }
 
 function reload_graph(){
     const now = new Date();
-    for (const title of ['pressure', 'wind', 'temperature']){
+    for (const title of ['pressure', 'wind', 'temperature', 'precipitation']){
       d3.json(`${title}_data.json?t=${now.getTime()}`).then(data => {
 
         // Parse the epoch timestamp and value strings into numbers
@@ -59,7 +61,7 @@ function reload_graph(){
         // console.log(filteredData[filteredData.length-1]);
 
         // Set up the SVG element and scales
-        const margin = { top: 48, right: 12, bottom: 24, left: 24 };
+        const margin = { top: 48, right: 12, bottom: 24, left: 34 };
         const width = 950 - margin.left - margin.right;
         const height = 269 - margin.top - margin.bottom;
 
@@ -83,13 +85,15 @@ function reload_graph(){
 
         const y = d3.scaleLinear()
             .range([height, 0]);
+        var minY = d3.min(parsedData, function(d) { return d[1]; });
+        var maxY = d3.max(parsedData, function(d) { return d[1]; });
         if (title === 'pressure'){
           y.domain([-4, 4]);  
-        }else if (title === 'wind'){
-          y.domain([0, 12]);  
+        }else if (title === 'wind') {
+          y.domain([0, 12]);
+        }else if (title === 'precipitation'){
+          y.domain([0, Math.max(2.0, maxY)])
         }else {
-          var minY = d3.min(parsedData, function(d) { return d[1]; });
-          var maxY = d3.max(parsedData, function(d) { return d[1]; });
           y.domain([minY, maxY]);
         }
 

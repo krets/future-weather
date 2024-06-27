@@ -84,7 +84,9 @@ svg {
   stroke: #5db5c4;
 }
 
-/* Areas */
+#precipitation-past-path.line {
+  stroke: #383bff;
+}
 .area {
   fill-opacity: 0.15;
   fill: #9d9d57;
@@ -99,7 +101,9 @@ svg {
   fill: #5db5c4;
 }
 
-/* Y axes */
+#precipitation-past-area.area {
+  fill: #383bff;
+}
 .y-axis.temperature {
   stroke: #d2a923;
   fill: #d2a923;
@@ -119,9 +123,14 @@ svg {
   stroke-width: 1;
 }
 
-/* Footer */
 footer {
   padding: 20px;
+}
+.y-axis.precipitation {
+  stroke: #383bff;
+  fill: #383bff;
+  color: #383bff;
+  stroke-width: 1;
 }
 
 footer p {
