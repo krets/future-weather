@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "message": "Template Notice",
+    "updatedDate": "2022-12-02T00:00:00Z",
+    "expiresDate": "2022-12-31T00:00:00Z"
+  },
+  {
+    "id": "2",
+    "message": "There was a service disruption on Tuesday, 2024-06-25\nIt was corrected 2024-06-27.\n\nThe predictive data for pressure may be wierd for a bit.\n-jesse",
+    "updatedDate": "2024-06-27T00:00:00Z",
+    "expiresDate": "2024-06-30T00:00:00Z"
+  }
+]

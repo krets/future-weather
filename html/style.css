@@ -160,8 +160,33 @@ h1 {
   .button {
     cursor: pointer;
   }
-  #exclamation-icon {
+  #notices-alert {
     cursor: pointer;
     color: #ffeb3b;
     font-size: 12pt;
   }
+
+.notice {
+  position: relative;
+  padding: 15px;
+  margin-bottom: 10px;
+  border: 1px solid #000000;
+  background-color: #ffeb3b;
+  color: black;
+}
+
+.notice .dismiss-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  cursor: pointer;
+}
+
+.notice.read {
+  display: none;
+  background-color: #999;
+}
+
+#notices-alert.unread {
+  color: #fc0;
+}

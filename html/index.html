@@ -6,13 +6,8 @@
     <link rel="stylesheet" href="style.css?_=20240627a">
   </head>
   <body>
-  <div id="notice">
-    <h2>Notice:</h2>
-    There was a service disruption on Tuesday, 2024-06-25 that went unnoticed until 2024-06-27.<br/>
-    The predictive data for pressure will <b>rebuild slowly in the next 36 hours</b>.
-    <span onclick="this.parentElement.style.display='none'" class="button topright">×</span>
-  </div>
-  <h1>Pressure and Wind prediction for Berlin Treptow <span id="exclamation-icon">!</span></h1>
+  <div id="notices-container"></div>
+  <h1>Pressure and Wind prediction for Berlin Treptow <span id="notices-alert">!</span></h1>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
     <svg id="pressure" width="950" height="269"></svg>
     <svg id="wind" width="950" height="269"></svg>
@@ -356,7 +351,60 @@ function apply_notice(){
       document.getElementById('exclamation-icon').style.display = 'none';
     }
 }
-apply_notice();
+
+function update_notices(){
+  fetch('notices.json')
+    .then(response => response.json())
+    .then(notices => {
+      const noticesContainer = document.getElementById('notices-container');
+      const noticesAlert = document.getElementById('notices-alert');
+      let unreadNotices = false;
+
+      notices.forEach(notice => {
+        const noticeElement = document.createElement('div');
+        noticeElement.classList.add('notice');
+        noticeElement.id = `notice-${notice.id}`;
+
+        if (localStorage.getItem(`notice-${notice.id}-read`)) {
+          noticeElement.classList.add('read');
+        }
+
+        const dismissBtn = document.createElement('span');
+        dismissBtn.classList.add('dismiss-btn');
+        dismissBtn.textContent = 'x';
+        dismissBtn.addEventListener('click', () => {
+          noticeElement.classList.add('read');
+          noticeElement.style.display = 'none';
+          localStorage.setItem(`notice-${notice.id}-read`, true);
+        });
+
+        noticeElement.innerHTML = notice.message.replace(/\n/g, '<br/>');
+        noticeElement.appendChild(dismissBtn);
+
+        const currentDate = new Date();
+        const expiresDate = new Date(notice.expiresDate);
+        if (currentDate < expiresDate) {
+          noticesContainer.appendChild(noticeElement);
+          if (!localStorage.getItem(`notice-${notice.id}-read`)) {
+            unreadNotices = true;
+          }
+        }
+      });
+
+      if (unreadNotices) {
+        noticesAlert.classList.add('unread');
+      }
+
+      noticesAlert.addEventListener('click', () => {
+        const readNotices = document.querySelectorAll('.notice.read');
+        readNotices.forEach(notice => {
+          notice.style.display = notice.style.display === 'none' ? 'block' : 'none';
+        });
+      });
+    });
+}
+
+update_notices();
 reload_graph();
 set_icon_color();
 setInterval(reload_graph, 300000);
