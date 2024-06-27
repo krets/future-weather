@@ -11,7 +11,7 @@ LOG = logging.getLogger(__name__)
 _BASE_URL = "http://%s/api/v1/query_range"
 
 def query(step, hours, base_url, target):
-    LOG.info(f"Running query with step={step} seconds and hours={hours}")
+    LOG.info(f"Running query with step={step} seconds and hours={hours}; output to '{target}'")
     now = int(time.time())
     yesterday = now - 24 * 60 * 60
 

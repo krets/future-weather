@@ -3,21 +3,27 @@
 <head>
   <title>Future Weather</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="style.css?_=20230408">
+    <link rel="stylesheet" href="style.css?_=20240627a">
   </head>
   <body>
-    <p>Pressure and Wind prediction for Berlin Treptow</span></p>
-    <img id="dog_icon" src="./doggo.png" alt="doggo">
+  <div id="notice">
+    <h2>Notice:</h2>
+    There was a service disruption on Tuesday, 2024-06-25 that went unnoticed until 2024-06-27.<br/>
+    The predictive data for pressure will <b>rebuild slowly in the next 36 hours</b>.
+    <span onclick="this.parentElement.style.display='none'" class="button topright">×</span>
+  </div>
+  <h1>Pressure and Wind prediction for Berlin Treptow <span id="exclamation-icon">!</span></h1>
+  <img id="dog_icon" src="./doggo.png" alt="doggo">
     <svg id="pressure" width="950" height="269"></svg>
     <svg id="wind" width="950" height="269"></svg>
     <svg id="temperature" width="950" height="269"></svg>
     <div id="updated_info"></div>
-
   <div class="change-log">
   <span class="recent">Recent Changes </span><span class="info-icon">?</span>
   <div class="change-log-popup">
     <h2>Change Log</h2>
     <ul>
+      <li>2024-06-26: Service outage; Data collection failed.</li>
       <li>2023-04-08: Changed colors for graphs</li>
       <li>2023-04-07: Adding temperature outlook</li>
       <li>2023-04-02: Now rendering graphs using D3.js and SVGs. This is much faster on mobile devices. The source data is now coming from yr.no with a 12h prediction</li>
@@ -335,6 +341,18 @@ function set_icon_color(fill="#ccc"){
     link.href = canvas_icon.toDataURL('image/x-icon');
     console.log('updated icon (color: '+fill+')');
 }
+function apply_notice(){
+    document.getElementById('exclamation-icon').addEventListener('click', function() {
+      document.getElementById('notice').style.display = 'block';
+    });
+    var currentDate = new Date();
+    var endDate = new Date('2024-06-29');
+    if (currentDate > endDate) {
+      document.getElementById('notice').style.display = 'none';
+      document.getElementById('exclamation-icon').style.display = 'none';
+    }
+}
+apply_notice();
 reload_graph();
 set_icon_color();
 setInterval(reload_graph, 300000);
