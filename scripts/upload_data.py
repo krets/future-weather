@@ -18,7 +18,7 @@ def query(step, hours, base_url, target):
     data = {}
     LOG.info("Pressure query")
     window = "4h"
-    multiplier = "4*60*60"
+    multiplier = "4.3*60*60"
     queries = [(f'avg(deriv(bmp280_pressure[{window}]))*{multiplier}', yesterday, now)]
     queries.extend(build_prediction_queries(f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s"}}[{window}] offset %sh))*{multiplier}', hours))
     raw_merged_data = run_queries(base_url, queries, step)
