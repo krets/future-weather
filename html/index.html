@@ -19,12 +19,6 @@
   <div class="change-log-popup">
     <h2>Change Log</h2>
     <ul>
-      <li>2024-06-26: Service outage; Data collection failed.</li>
-      <li>2023-04-08: Changed colors for graphs</li>
-      <li>2023-04-07: Adding temperature outlook</li>
-      <li>2023-04-02: Now rendering graphs using D3.js and SVGs. This is much faster on mobile devices. The source data is now coming from yr.no with a 12h prediction</li>
-      <li>2023-03-25: Created a merged graph extending the recorded data with the 12 hour prediction.</li>
-      <li>2023-03-15: Show pressure and wind, past and future graphs.</li>
     </ul>
   </div>
 </div>
@@ -406,7 +400,22 @@ function update_notices(){
       });
     });
 }
+function update_changelog(){
+  fetch('changelog.json')
+    .then(response => response.json())
+    .then(changes => {
+      const changelogContainer = document.querySelector('.change-log-popup ul');
+      changelogContainer.innerHTML = ''; // Clear existing changelog
 
+      changes.forEach(change => {
+        const changeItem = document.createElement('li');
+        changeItem.textContent = `${change.date}: ${change.message}`;
+        changelogContainer.appendChild(changeItem);
+      });
+    });
+}
+
+update_changelog();
 update_notices();
 reload_graph();
 set_icon_color();
