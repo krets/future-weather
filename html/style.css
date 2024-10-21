@@ -162,7 +162,7 @@ h1 {
   }
   #notices-alert {
     cursor: pointer;
-    color: #ffeb3b;
+    color: #999;
     font-size: 12pt;
   }
 
@@ -190,3 +190,7 @@ h1 {
 #notices-alert.unread {
   color: #fc0;
 }
+#notices-alert.empty {
+  display: None;
+}
+

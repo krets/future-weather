@@ -359,7 +359,7 @@ function update_notices(){
       const noticesContainer = document.getElementById('notices-container');
       const noticesAlert = document.getElementById('notices-alert');
       let unreadNotices = false;
-
+      let noticeCount = 0;
       notices.forEach(notice => {
         const noticeElement = document.createElement('div');
         noticeElement.classList.add('notice');
@@ -385,6 +385,7 @@ function update_notices(){
         const expiresDate = new Date(notice.expiresDate);
         if (currentDate < expiresDate) {
           noticesContainer.appendChild(noticeElement);
+          noticeCount++;
           if (!localStorage.getItem(`notice-${notice.id}-read`)) {
             unreadNotices = true;
           }
@@ -393,6 +394,8 @@ function update_notices(){
 
       if (unreadNotices) {
         noticesAlert.classList.add('unread');
+      }else if(noticeCount === 0) {
+        noticesAlert.classList.add('empty');
       }
 
       noticesAlert.addEventListener('click', () => {
