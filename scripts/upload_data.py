@@ -19,7 +19,9 @@ def query(step, hours, base_url, target):
     LOG.info("Pressure query")
     queries = [('avg(deriv(bmp280_pressure[4h]))*4*60*60', yesterday, now)]
     queries.extend(build_prediction_queries('avg(deriv(yrno_air_pressure_at_sea_level{hours="%s"}[4h] offset %sh))*4*60*60', hours))
-    data['pressure'] = run_queries(base_url, queries, step)
+    raw_merged_data = run_queries(base_url, queries, step)
+    smoothed_data = smooth(raw_merged_data, window_size=5)
+    data['pressure'] = smoothed_data
 
     LOG.info("Wind query")
     wind_queries = [('openweather_windspeed', yesterday, now)]
@@ -73,6 +75,41 @@ def build_prediction_queries(template, hours, index_offset=1):
             now + hour * 60 * 60,
         ))
     return queries
+
+
+def smooth(data, window_size=5):
+    """
+    Smooths the pressure data using a rolling average.
+
+    Parameters:
+    - data (list): A list of pressure data in the format [[timestamp, pressure], ...].
+    - window_size (int): The size of the rolling window for smoothing.
+
+    Returns:
+    - list: A list of smoothed pressure data in the same format.
+    """
+    smoothed_data = []
+    length = len(data)
+
+    # Convert pressure values to float for calculations
+    pressures = [float(item[1]) for item in data]
+
+    for i in range(length):
+        # Calculate the start and end indices for the rolling window
+        start_index = max(0, i - window_size // 2)
+        end_index = min(length, i + window_size // 2 + 1)
+
+        # Get the values in the window
+        window_values = pressures[start_index:end_index]
+
+        # Calculate the average
+        average = sum(window_values) / len(window_values)
+
+        # Append the smoothed value to the result
+        smoothed_data.append([data[i][0], average])
+
+    return smoothed_data
+
 
 def main():
     # Parse command-line arguments
