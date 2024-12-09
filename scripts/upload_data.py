@@ -28,18 +28,16 @@ def query(step, hours, base_url, target):
     LOG.info("Wind query")
     wind_queries = [('openweather_windspeed', yesterday, now)]
     wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s"} offset %sh', hours))
-    data['wind'] = run_queries(base_url, wind_queries, step)
+    raw_wind_data = run_queries(base_url, wind_queries, step)
+    smoothed_wind_data = smooth(raw_wind_data, window_size=5)
+    data['wind'] = smoothed_wind_data
 
     LOG.info("Temperature query")
     temp_queries = [('yrno_air_temperature{hours="0"}', yesterday, now)]
     temp_queries.extend(build_prediction_queries('yrno_air_temperature{hours="%s"} offset %sh', hours))
-    data['temperature'] = run_queries(base_url, temp_queries, step)
-
-
-    LOG.info("Precipitation query")
-    prec_queries = [('yrno_precipitation_amount{hours="0"}', yesterday, now)]
-    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s"} offset %sh', hours))
-    data['precipitation'] = run_queries(base_url, prec_queries, step)
+    raw_temp_data = run_queries(base_url, temp_queries, step)
+    smoothed_temp_data = smooth(raw_temp_data, window_size=5)
+    data['temperature'] = smoothed_temp_data
 
     LOG.info("Uploading json data files")
     for name, values in data.items():
