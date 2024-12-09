@@ -194,3 +194,24 @@ h1 {
   display: None;
 }
 
+.now-intersection {
+    fill: lightblue;
+    /*stroke: black;*/
+    /*stroke: lightblue;*/
+    /*color: lightblue;*/
+    stroke-width: 0;
+    opacity: 1;
+}
+.annotation {
+  font-size: 10pt;
+  fill: lightblue;
+  opacity: 0;
+}
+
+#pressure .annotation {
+  opacity: 1;
+}
+
+#pressure .annotation.hard {
+  fill: red;
+}

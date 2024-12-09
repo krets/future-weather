@@ -184,38 +184,14 @@ function reload_graph(){
           .x(d => x(d[0]))
           .y(d => y(d[1]));
 
-        if (title==='SKIP-temperature'){
-          // Define a linear color scale
-          var colorScale = d3.scaleLinear()
-            .domain([0, 20, 28, 33])  // Define the y-value breakpoints
-            .range(["blue", "green", "yellow", "red"])
-
-          svg.append("path")
-          .datum(data_past)
-          .attr("class", "line")
-          .attr("d", line)
-          .style("stroke", function(d) { return colorScale(d[1]); });
-
-          // var path = d3.select('#temperature-past-path');
-          // path.attr('stroke-width', 20)
-          //   .attr('stroke', d => colorScale(d[1]))
-
-        }else{
-          svg.append('path')
+        svg.append('path')
           .datum(data_past)
           .attr('id', `${title}-past-path`)
           .attr("class", "line")
           .attr('fill', 'none')
           .attr('stroke-width', 2)
           .attr('d', line)
-          // .style('stroke', green)
 
-        }
-
-        // Draw the future line
-        const line_future = d3.line()
-          .x(d => x(d[0]))
-          .y(d => y(d[1]));
         svg.append('path')
           .datum(data_future)
           .attr("class", "dashed")
@@ -225,8 +201,42 @@ function reload_graph(){
           .attr('stroke-width', 2)
           .attr('d', line);
 
+        // Find the closest data point to current time in `data_past`
+        const closestPoint = data_past[data_past.length - 1];
 
-        // Define the area generator
+        // Add a circle at the intersection point
+        svg.append('circle')
+            .attr('cx', x(closestPoint[0]))
+            .attr('cy', y(closestPoint[1]))
+            .attr('r', 4)
+            .attr('class', 'now-intersection');
+
+        let annotationClass = 'annotation';
+        let annotationText = `(${closestPoint[1].toFixed(2)}) ${title}`;
+
+        // Add text annotation for the intersection point
+        if (title === "pressure") {
+          if (Math.abs(closestPoint[1]) < 0.25){
+            annotationText += " steady";
+          }else if (closestPoint[1] > 0){
+            annotationText += " rising";
+          }else {
+            annotationText += " falling";
+          }
+
+          if (Math.abs(closestPoint[1]) > 2){
+            annotationText += " hard";
+            annotationClass += " hard"
+          }
+        }
+
+        svg.append('text')
+          .attr('x', x(closestPoint[0]) + 5)
+          .attr('y', y(closestPoint[1]) - 10)
+          .attr('class', annotationClass)
+          .text(annotationText);
+
+
         const area = d3.area()
           .x(d => x(d[0]))
           .y0(y(0))
@@ -280,16 +290,9 @@ function reload_graph(){
           .attr('class', 'y-axis '+title)
           .call(yAxis)
           .selectAll('text, path, line')
-          // .style('fill', green)
-          // .style('stroke', green)
           .style('stroke-width', 2);
         svg.selectAll("g.y-axis text")
            .style("stroke-width", null);
-        // svg.append("text")
-        // .attr("class", "y-axis-label")
-        // .attr("text-anchor", "middle")
-        // .attr("transform", `rotate(-90) translate(${-height/2},${-margin.left+20})`)
-        // .text("Y Axis Label");
 
         let hours_ahead = Math.round((parsedData[parsedData.length-1][0] - Date.now())/1000/3600)
 
