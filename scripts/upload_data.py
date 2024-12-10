@@ -39,6 +39,11 @@ def query(step, hours, base_url, target):
     smoothed_temp_data = smooth(raw_temp_data, window_size=5)
     data['temperature'] = smoothed_temp_data
 
+    LOG.info("Precipitation query")
+    prec_queries = [('yrno_precipitation_amount{hours="0"}', yesterday, now)]
+    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s"} offset %sh', hours))
+    data['precipitation'] = run_queries(base_url, prec_queries, step)
+
     LOG.info("Uploading json data files")
     for name, values in data.items():
         data_file = "%s_data.json" % name
