@@ -303,6 +303,32 @@ function reload_graph(){
           .style('font-size', '14px')
           .style('fill', '#ccc')
           .text(`${title} (${units[title]}) + ${hours_ahead}h prediction`);
+
+        // Add out-of-date overlay if data is stale
+        if (isOutOfDate) {
+          // Dim the entire graph
+          d3.select(`#${title}`).classed('out-of-date', true);
+          
+          // Create a wrapper div around the SVG if it doesn't exist
+          const svgElement = d3.select(`#${title}`).node();
+          let wrapper = d3.select(svgElement.parentNode).select(`.${title}-wrapper`);
+          
+          if (wrapper.empty()) {
+            // Create wrapper div and move SVG into it
+            wrapper = d3.select(svgElement.parentNode)
+              .insert('div', `#${title}`)
+              .attr('class', `${title}-wrapper`)
+              .style('position', 'relative')
+              .style('display', 'inline-block');
+            
+            wrapper.node().appendChild(svgElement);
+          }
+          
+          // Add overlay to the wrapper
+          wrapper.append('div')
+            .attr('class', 'out-of-date-overlay')
+            .text('Something went wrong. Graph data out-of-date.');
+        }
       });
       let updatedInfo = document.getElementById("updated_info");
       updatedInfo.innerHTML = "Updated " + now.toLocaleString();

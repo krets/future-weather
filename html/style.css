@@ -215,3 +215,23 @@ h1 {
 #pressure .annotation.hard {
   fill: red;
 }
+
+.out-of-date-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgb(65, 2, 2, 83%);
+  color: #d3d3d3;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  z-index: 10;
+  pointer-events: none;
+  border: solid 1px;
+}
+
+svg.out-of-date {
+  opacity: 0.5;
+  filter: grayscale(50%);
+}
