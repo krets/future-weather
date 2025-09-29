@@ -395,7 +395,7 @@ function apply_notice(){
 }
 
 function update_notices(){
-  fetch('notices.json')
+  fetch(`notices.json?t=${Date.now()}`)
     .then(response => response.json())
     .then(notices => {
       console.log('Loaded notices:', notices);
@@ -461,7 +461,7 @@ function update_notices(){
     });
 }
 function update_changelog(){
-  fetch('changelog.json')
+  fetch(`changelog.json?t=${Date.now()}`)
     .then(response => response.json())
     .then(changes => {
       const changelogContainer = document.getElementById('changelog-list');
