@@ -1,6 +1,10 @@
 [
   {
     "date": "2025-09-29",
+    "message": "Reworked layout for responsive design."
+  },
+  {
+    "date": "2025-09-29",
     "message": "Overhaul to notifications. Also graphs will 'dim' if the data is out-of-date or invalid."
   },
   {
