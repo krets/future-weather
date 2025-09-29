@@ -45,59 +45,59 @@ svg {
 /* Mobile responsive styles */
 @media (max-width: 768px) {
   #notification-tray {
-    width: 100vw;
+    width: 80%;
+    height: 100%;
     border-left: none;
-    border-top: 1px solid #555;
+    border-top: 1pt solid #555;
   }
 }
 
 @media (max-width: 480px) {
   #notification-tray {
-    width: 100vw;
+    width: 95%;
+    height: 100%;
   }
   
   #notification-content {
-    padding: 15px;
+    padding: 2em;
   }
   
   #tray-header h3 {
-    font-size: max(18px, 1.2rem);
+    font-size: 2.5rem;
   }
   
   #changelog-list li {
-    padding: 10px 12px;
-    padding-top: 22px;
+    padding: 2em;
+    padding-top: 2.5em;
   }
   
   .changelog-message {
-    font-size: max(14px, 0.9rem);
-    line-height: 1.5;
+    line-height: 1.6;
   }
   
   .changelog-date {
-    font-size: max(11px, 0.7rem);
+    font-size: 1.4rem;
   }
   
   .notice {
-    padding: 12px;
-    font-size: max(14px, 0.9rem);
+    padding: 1.5em;
+    font-size: 1.8rem;
   }
   
   .notice-message {
-    font-size: max(14px, 0.9rem);
-    line-height: 1.5;
+    line-height: 1.7;
   }
   
   .notice-date {
-    font-size: max(11px, 0.7rem);
+    font-size: 1.4rem;
   }
   
   #tray-footer p {
-    font-size: max(12px, 0.8rem);
+    font-size: 1.5rem;
   }
   
   #updated-info-tray {
-    font-size: max(12px, 0.8rem);
+    font-size: 1.5rem;
   }
 }
 
@@ -106,7 +106,7 @@ svg {
 }
 
 #notification-content {
-  padding: 20px;
+  padding: 1.8em;
   height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
@@ -117,7 +117,7 @@ svg {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #555;
+  border-bottom: 1pt solid #555;
   margin-bottom: .4em;
 }
 
@@ -127,7 +127,7 @@ svg {
 }
 
 #tray-close {
-  font-size: 24px;
+  font-size: 3em;
   cursor: pointer;
   color: #999;
   line-height: 1;
@@ -138,14 +138,14 @@ svg {
 }
 
 #updated-info-tray {
-  font-size: max(11px, 0.7rem);
+  font-size: 1em;
   color: #888;
-  margin-bottom: 15px;
+  margin-bottom: 1em;
 }
 
 #changelog-container-tray {
   flex: 1;
-  margin-bottom: 20px;
+  margin-bottom: 2em;
 }
 
 
@@ -159,25 +159,24 @@ svg {
 
 #changelog-list li {
   background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  border-radius: 0.5em;
+  padding: 0.8em;
+  margin-bottom: 0.5em;
   position: relative;
-  padding-top: 20px;
+  padding-top: 1.8em;
   text-align: left;
 }
 
 .changelog-date {
   position: absolute;
-  top: 4px;
-  left: 8px;
-  font-size: max(10px, 0.65rem);
+  top: 0.25rem;
+  left: 0.5rem;
+  font-size: 0.7rem;
   color: #888;
   font-weight: normal;
 }
 
 .changelog-message {
-  font-size: max(12px, 0.8rem);
   color: #ccc;
   text-align: left;
   line-height: 1.4;
@@ -185,12 +184,12 @@ svg {
 
 #tray-footer {
   margin-top: auto;
-  padding-top: 15px;
-  border-top: 1px solid #555;
+  padding-top: 1em;
+  border-top: 1pt solid #555;
 }
 
 #tray-footer p {
-  font-size: max(11px, 0.7rem);
+  font-size: 0.75rem;
   color: #888;
   margin: 0;
 }
@@ -202,10 +201,10 @@ svg {
 /* Notification Icon */
 #notification-icon {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
+  bottom: 1.8em;
+  right: 1.8em;
+  width: 3em;
+  height: 3em;
   background-color: #444;
   border-radius: 50%;
   display: flex;
@@ -214,25 +213,6 @@ svg {
   cursor: pointer;
   transition: background-color 0.3s ease;
   z-index: 999;
-}
-
-@media (max-width: 480px) {
-  #notification-icon {
-    bottom: 15px;
-    right: 15px;
-    width: 45px;
-    height: 45px;
-  }
-  
-  #notification-icon::before {
-    font-size: 20px;
-  }
-  
-  #notification-badge {
-    width: 18px;
-    height: 18px;
-    font-size: 11px;
-  }
 }
 
 #notification-icon:hover {
@@ -249,24 +229,43 @@ svg {
 
 #notification-icon::before {
   content: "ℹ";
-  font-size: 24px;
+  font-size: 2em;
   color: #ccc;
 }
 
 #notification-badge {
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -0.75em;
+  right: -0.75em;
   background-color: #ff5285;
   color: white;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 1.8em;
+  height: 1.8em;
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 1em;
   font-weight: bold;
+}
+
+@media (max-width: 480px) {
+  #notification-icon {
+    bottom: 1.5em;
+    right: 1.5em;
+    width: 4em;
+    height: 4em;
+  }
+  
+  #notification-icon::before {
+    font-size: 2.5em;
+  }
+  
+  #notification-badge {
+    width: 2.2em;
+    height: 2.2em;
+    font-size: 1.3em;
+  }
 }
 
 /* Dashed line */
@@ -336,7 +335,7 @@ h1 {
 }
 #notice {
     background-color: #ffeb3b;
-    padding: 10px;
+    padding: 0.8em;
     top: 0;
 
     z-index: 100;
@@ -344,8 +343,8 @@ h1 {
   }
   .topright {
     position: absolute;
-    top: 10px;
-    right: 20px;
+    top: 0.8em;
+    right: 2.0em;
     font-size: 300%;
   }
   .button {
@@ -353,21 +352,21 @@ h1 {
   }
 .notice {
   position: relative;
-  padding: 12px;
-  margin-bottom: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.6rem;
   border: 1px solid #666;
   background-color: rgba(255, 235, 59, 0.9);
   color: black;
-  border-radius: 5px;
-  font-size: max(13px, 0.85rem);
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
 }
 
 .notice .dismiss-btn {
   position: absolute;
-  top: 5px;
-  right: 8px;
+  top: 0.3rem;
+  right: 0.5rem;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 1rem;
   color: #666;
 }
 
@@ -383,17 +382,17 @@ h1 {
 
 .notice-date {
   position: absolute;
-  top: 4px;
-  left: 8px;
-  font-size: max(10px, 0.65rem);
+  top: 0.25rem;
+  left: 0.5rem;
+  font-size: 0.65rem;
   color: #888;
   font-weight: normal;
 }
 
 .notice-message {
   display: block;
-  padding-top: 10px;
-  font-size: max(13px, 0.85rem);
+  padding-top: 0.6rem;
+  font-size: 0.85rem;
   text-align: left;
   line-height: 1.4;
 }
@@ -407,7 +406,7 @@ h1 {
     opacity: 1;
 }
 .annotation {
-  font-size: 10pt;
+  font-size: 0.7rem;
   fill: lightblue;
   opacity: 0;
 }

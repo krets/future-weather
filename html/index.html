@@ -286,7 +286,7 @@ function reload_graph(){
           .attr('x', x(now))
           .attr('y', -10)
           .attr('text-anchor', 'middle')
-          .style('font-size', '7pt')
+          .style('font-size', '0.5rem')
           .style('fill', 'lightblue')
           .text(`now`);
 
@@ -319,7 +319,7 @@ function reload_graph(){
           .attr('x', width / 2)
           .attr('y', -24)
           .attr('text-anchor', 'middle')
-          .style('font-size', '14px')
+          .style('font-size', '0.9rem')
           .style('fill', '#ccc')
           .text(`${title} (${units[title]}) + ${hours_ahead}h prediction`);
 
@@ -493,7 +493,7 @@ function updateNotificationIcon() {
   // Update badge
   if (unreadNotices > 0) {
     notificationBadge.textContent = unreadNotices;
-    notificationBadge.style.display = 'block';
+    notificationBadge.style.display = 'flex';
     notificationIcon.classList.add('has-notifications');
   } else {
     notificationBadge.style.display = 'none';
