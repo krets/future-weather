@@ -397,12 +397,14 @@ function update_notices(){
   fetch('notices.json')
     .then(response => response.json())
     .then(notices => {
+      console.log('Loaded notices:', notices);
       const noticesContainer = document.getElementById('notices-container-tray');
       let unreadNotices = false;
       let urgentNotices = false;
       let noticeCount = 0;
       
       notices.forEach(notice => {
+        console.log('Processing notice:', notice);
         const noticeElement = document.createElement('div');
         noticeElement.classList.add('notice');
         noticeElement.id = `notice-${notice.id}`;
@@ -434,6 +436,7 @@ function update_notices(){
 
         const currentDate = new Date();
         const expiresDate = new Date(notice.expiresDate);
+        console.log('Current date:', currentDate, 'Expires date:', expiresDate, 'Is valid:', currentDate < expiresDate);
         if (currentDate < expiresDate) {
           noticesContainer.appendChild(noticeElement);
           noticeCount++;
@@ -443,6 +446,8 @@ function update_notices(){
               urgentNotices = true;
             }
           }
+        } else {
+          console.log('Notice expired, not showing:', notice);
         }
       });
 
