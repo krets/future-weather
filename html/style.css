@@ -9,6 +9,35 @@ svg {
   color: #555;
   background-color: #181c20;
   margin: .5em;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive SVG container */
+.svg-container {
+  width: 100%;
+  max-width: 950px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  svg {
+    margin: 0.25em;
+  }
+  
+  .svg-container {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  svg {
+    margin: 0.1em;
+  }
+  
+  .svg-container {
+    padding: 0 5px;
+  }
 }
 
 /* Dog icon */

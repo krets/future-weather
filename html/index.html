@@ -9,10 +9,18 @@
   <body>
   <h1>Pressure and Wind prediction for Berlin Treptow</h1>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
-    <svg id="pressure" width="950" height="269"></svg>
-    <svg id="wind" width="950" height="269"></svg>
-    <svg id="temperature" width="950" height="269"></svg>
-    <svg id="precipitation" width="950" height="269"></svg>
+  <div class="svg-container">
+    <svg id="pressure"></svg>
+  </div>
+  <div class="svg-container">
+    <svg id="wind"></svg>
+  </div>
+  <div class="svg-container">
+    <svg id="temperature"></svg>
+  </div>
+  <div class="svg-container">
+    <svg id="precipitation"></svg>
+  </div>
   <!-- Notification Tray -->
   <div id="notification-tray" class="collapsed">
     <div id="notification-content">
@@ -64,10 +72,11 @@ function reload_graph(){
         }
         // console.log(filteredData[filteredData.length-1]);
 
-        // Set up the SVG element and scales
+        // Set up the SVG element and scales - responsive dimensions
         const margin = { top: 48, right: 12, bottom: 24, left: 34 };
-        const width = 950 - margin.left - margin.right;
-        const height = 269 - margin.top - margin.bottom;
+        const containerWidth = Math.min(950, window.innerWidth - 40); // 40px for padding
+        const width = containerWidth - margin.left - margin.right;
+        const height = Math.max(200, Math.min(269, containerWidth * 0.28)) - margin.top - margin.bottom;
 
 
         // select the SVG element
@@ -80,8 +89,11 @@ function reload_graph(){
         d3.select(`#${title}-container .out-of-date-overlay`).remove();
         d3.select(`#${title}`).classed('out-of-date', false);
 
-        svg = d3.select(`#${title}`).attr('width', width + margin.left + margin.right)
+        svg = d3.select(`#${title}`)
+          .attr('width', width + margin.left + margin.right)
           .attr('height', height + margin.top + margin.bottom)
+          .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+          .attr('preserveAspectRatio', 'xMidYMid meet')
           // .style('background-color', '#333')
           .append('g')
           .attr('transform', `translate(${margin.left},${margin.top})`);
