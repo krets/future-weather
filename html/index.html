@@ -3,28 +3,37 @@
 <head>
   <title>Future Weather</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="style.css?_=20241209">
+    <link rel="stylesheet" href="style.css?_=20250929">
   </head>
   <body>
-  <div id="notices-container"></div>
-  <h1>Pressure and Wind prediction for Berlin Treptow <span id="notices-alert">!</span></h1>
+  <h1>Pressure and Wind prediction for Berlin Treptow</h1>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
     <svg id="pressure" width="950" height="269"></svg>
     <svg id="wind" width="950" height="269"></svg>
     <svg id="temperature" width="950" height="269"></svg>
     <svg id="precipitation" width="950" height="269"></svg>
-    <div id="updated_info"></div>
-  <div class="change-log">
-  <span class="recent">Recent Changes </span><span class="info-icon">?</span>
-  <div class="change-log-popup">
-    <h2>Change Log</h2>
-    <ul>
-    </ul>
+  <!-- Notification Tray -->
+  <div id="notification-tray" class="collapsed">
+    <div id="notification-content">
+      <div id="tray-header">
+        <h3>Recent Changes</h3>
+        <span id="tray-close">&times;</span>
+      </div>
+      <div id="updated-info-tray"></div>
+      <div id="notices-container-tray"></div>
+      <div id="changelog-container-tray">
+        <ul id="changelog-list"></ul>
+      </div>
+      <div id="tray-footer">
+        <p>Weather data provided by <a href="https://www.yr.no/">yr.no</a> and my home weather station.</p>
+      </div>
+    </div>
   </div>
-</div>
-<footer>
-  <p>Weather data provided by <a href="https://www.yr.no/">yr.no</a></p>
-</footer>
+  
+  <!-- Notification Icon -->
+  <div id="notification-icon">
+    <span id="notification-badge"></span>
+  </div>
     <script>
 const green = "#73bf69";
 const red = "#ff5285";
@@ -43,6 +52,11 @@ function reload_graph(){
 
         // Parse the epoch timestamp and value strings into numbers
         const parsedData = data.map(([timestamp, value]) => [Number(timestamp) * 1000, Number(value)]);
+        
+        // Check if data is out-of-date (last data point is in the past)
+        const lastDataPoint = parsedData[parsedData.length - 1];
+        const isOutOfDate = lastDataPoint[0] < now.getTime();
+        
         // const filteredData = parsedData.filter(d => d[0] >= now && d[0] <= twentyMinutesFromNow);
         if(title === 'pressure'){
 
@@ -60,6 +74,10 @@ function reload_graph(){
 
         // remove all elements inside the SVG
         svg.selectAll('*').remove();
+        
+        // Remove any existing overlay and out-of-date class
+        d3.select(`#${title}-container .out-of-date-overlay`).remove();
+        d3.select(`#${title}`).classed('out-of-date', false);
 
         svg = d3.select(`#${title}`).attr('width', width + margin.left + margin.right)
           .attr('height', height + margin.top + margin.bottom)
@@ -330,8 +348,8 @@ function reload_graph(){
             .text('Something went wrong. Graph data out-of-date.');
         }
       });
-      let updatedInfo = document.getElementById("updated_info");
-      updatedInfo.innerHTML = "Updated " + now.toLocaleString();
+      let updatedInfo = document.getElementById("updated-info-tray");
+      updatedInfo.innerHTML = "Last Page Sync: " + now.toLocaleString();
     }
   }
 function set_icon_color(fill="#ccc"){
@@ -379,10 +397,11 @@ function update_notices(){
   fetch('notices.json')
     .then(response => response.json())
     .then(notices => {
-      const noticesContainer = document.getElementById('notices-container');
-      const noticesAlert = document.getElementById('notices-alert');
+      const noticesContainer = document.getElementById('notices-container-tray');
       let unreadNotices = false;
+      let urgentNotices = false;
       let noticeCount = 0;
+      
       notices.forEach(notice => {
         const noticeElement = document.createElement('div');
         noticeElement.classList.add('notice');
@@ -394,14 +413,23 @@ function update_notices(){
 
         const dismissBtn = document.createElement('span');
         dismissBtn.classList.add('dismiss-btn');
-        dismissBtn.textContent = 'x';
+        dismissBtn.textContent = '×';
         dismissBtn.addEventListener('click', () => {
           noticeElement.classList.add('read');
-          noticeElement.style.display = 'none';
           localStorage.setItem(`notice-${notice.id}-read`, true);
+          updateNotificationIcon();
         });
 
-        noticeElement.innerHTML = notice.message.replace(/\n/g, '<br/>');
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'notice-date';
+        dateSpan.textContent = notice.date || new Date(notice.updatedDate).toLocaleDateString();
+        
+        const messageSpan = document.createElement('span');
+        messageSpan.className = 'notice-message';
+        messageSpan.innerHTML = notice.message.replace(/\n/g, '<br/>');
+        
+        noticeElement.appendChild(dateSpan);
+        noticeElement.appendChild(messageSpan);
         noticeElement.appendChild(dismissBtn);
 
         const currentDate = new Date();
@@ -411,41 +439,86 @@ function update_notices(){
           noticeCount++;
           if (!localStorage.getItem(`notice-${notice.id}-read`)) {
             unreadNotices = true;
+            if (notice.urgent) {
+              urgentNotices = true;
+            }
           }
         }
       });
 
-      if (unreadNotices) {
-        noticesAlert.classList.add('unread');
-      }else if(noticeCount === 0) {
-        noticesAlert.classList.add('empty');
+      updateNotificationIcon();
+      
+      // Auto-expand tray for urgent notices
+      if (urgentNotices) {
+        document.getElementById('notification-tray').classList.remove('collapsed');
       }
-
-      noticesAlert.addEventListener('click', () => {
-        const readNotices = document.querySelectorAll('.notice.read');
-        readNotices.forEach(notice => {
-          notice.style.display = notice.style.display === 'none' ? 'block' : 'none';
-        });
-      });
     });
 }
 function update_changelog(){
   fetch('changelog.json')
     .then(response => response.json())
     .then(changes => {
-      const changelogContainer = document.querySelector('.change-log-popup ul');
+      const changelogContainer = document.getElementById('changelog-list');
       changelogContainer.innerHTML = ''; // Clear existing changelog
 
       changes.forEach(change => {
         const changeItem = document.createElement('li');
-        changeItem.textContent = `${change.date}: ${change.message}`;
+        
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'changelog-date';
+        dateSpan.textContent = change.date;
+        
+        const messageSpan = document.createElement('span');
+        messageSpan.className = 'changelog-message';
+        messageSpan.textContent = change.message;
+        
+        changeItem.appendChild(dateSpan);
+        changeItem.appendChild(messageSpan);
         changelogContainer.appendChild(changeItem);
       });
     });
 }
 
+function updateNotificationIcon() {
+  const notificationIcon = document.getElementById('notification-icon');
+  const notificationBadge = document.getElementById('notification-badge');
+  const unreadNotices = document.querySelectorAll('.notice:not(.read)').length;
+  
+  // Update badge
+  if (unreadNotices > 0) {
+    notificationBadge.textContent = unreadNotices;
+    notificationBadge.style.display = 'block';
+    notificationIcon.classList.add('has-notifications');
+  } else {
+    notificationBadge.style.display = 'none';
+    notificationIcon.classList.remove('has-notifications');
+  }
+}
+
+function initNotificationTray() {
+  const notificationIcon = document.getElementById('notification-icon');
+  const notificationTray = document.getElementById('notification-tray');
+  const trayClose = document.getElementById('tray-close');
+  
+  notificationIcon.addEventListener('click', () => {
+    notificationTray.classList.toggle('collapsed');
+  });
+  
+  trayClose.addEventListener('click', () => {
+    notificationTray.classList.add('collapsed');
+  });
+  
+  // Close tray when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!notificationTray.contains(e.target) && !notificationIcon.contains(e.target)) {
+      notificationTray.classList.add('collapsed');
+    }
+  });
+}
+
 update_changelog();
 update_notices();
+initNotificationTray();
 reload_graph();
 set_icon_color();
 setInterval(reload_graph, 300000);
