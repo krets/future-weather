@@ -438,6 +438,7 @@ function update_notices(){
         const dateSpan = document.createElement('span');
         dateSpan.className = 'notice-date';
         dateSpan.textContent = notice.date || new Date(notice.updatedDate).toLocaleDateString();
+        dateSpan.textContent += " Notice"
         
         const messageSpan = document.createElement('span');
         messageSpan.className = 'notice-message';
@@ -484,7 +485,7 @@ function update_changelog(){
         
         const dateSpan = document.createElement('span');
         dateSpan.className = 'changelog-date';
-        dateSpan.textContent = change.date;
+        dateSpan.textContent = `${change.date} Update`;
         
         const messageSpan = document.createElement('span');
         messageSpan.className = 'changelog-message';

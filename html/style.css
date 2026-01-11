@@ -406,7 +406,6 @@ h1 {
 }
 
 .notice.read {
-  opacity: 0.5;
   background-color: rgba(153, 153, 153, 0.3);
   color: #aaa;
 }
