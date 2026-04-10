@@ -26,7 +26,7 @@ def query(step, hours, base_url, target):
     data['pressure'] = smoothed_data
 
     LOG.info("Wind query")
-    wind_queries = [('openweather_windspeed', yesterday, now)]
+    wind_queries = [('yrno_wind_speed{hours="0"}', yesterday, now)]
     wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s"} offset %sh', hours))
     raw_wind_data = run_queries(base_url, wind_queries, step)
     smoothed_wind_data = smooth(raw_wind_data, window_size=5)
@@ -63,8 +63,12 @@ def run_queries(base_url, queries, step=60):
             "start": start,
             "end": end,
         }
-        resp = requests.get(base_url, params=params).json()
-        data.extend(resp['data']['result'][0]['values'])
+        try:
+            resp = requests.get(base_url, params=params).json()
+            data.extend(resp['data']['result'][0]['values'])
+        except IndexError:
+            LOG.warning(f"No results for query '{params}'")
+            raise
     return data
 
 
