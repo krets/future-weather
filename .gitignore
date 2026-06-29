@@ -2,3 +2,5 @@
 venv
 *.sqlite
 html/*_data.json
+html/notices.json
+html/admin.php
