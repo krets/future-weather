@@ -18,8 +18,8 @@ def query(step, hours, base_url, target):
     data = {}
     LOG.info("Pressure query")
     window = "4h"
-    multiplier = "4.3*60*60"
-    queries = [(f'avg(deriv(bmp280_pressure[{window}]))*{multiplier}', yesterday, now)]
+    multiplier = "4*60*60"
+    queries = [(f'avg(deriv(((bmp280_pressure > 750 and bmp280_pressure < 1250) and ignoring(__name__) (bmp280_temp > -40 and bmp280_temp < 200))[{window}:1m]))*{multiplier}', yesterday, now)]
     queries.extend(build_prediction_queries(f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s"}}[{window}] offset %sh))*{multiplier}', hours))
     raw_merged_data = run_queries(base_url, queries, step)
     smoothed_data = smooth(raw_merged_data, window_size=5)
