@@ -1,4 +1,7 @@
 .idea
+scripts/*.json
+scripts/tmp*
+__pycache__
 venv
 *.sqlite
 html/*_data.json
