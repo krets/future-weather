@@ -149,10 +149,11 @@ def upload_file(local_path, target, remote_name):
     subprocess.run(["ssh", remote_host, "mv", f"{remote_dir}/{tmp_name}", f"{remote_dir}/{remote_name}"], check=True)
 
 
-def query(step, hours, base_url, target):
+def query(step, hours, source, target):
     LOG.info(f"Running query with step={step} seconds and hours={hours}; output to '{target}'")
-    locations = get_locations(base_url)
+    locations = get_locations(source)
     LOG.info(f"Discovered locations: {locations}")
+    base_url = _QUERY_RANGE_URL % source
 
     data_target = target + "/data"
     remote_host, remote_dir = target.split(":", 1)
@@ -202,7 +203,7 @@ def main():
     LOG.setLevel(level)
 
     # Call query function with arguments
-    query(args.step, args.hours, _QUERY_RANGE_URL % args.source, args.target)
+    query(args.step, args.hours, args.source, args.target)
 
 
 if __name__ == '__main__':
