@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Future Weather</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="style.css?_=20250929">
   </head>
   <body>
-  <h1>Pressure and Wind prediction for Berlin Treptow</h1>
+  <div id="location-bar">
+    <h1 id="page-title">Pressure and Wind prediction</h1>
+    <select id="location-select" aria-label="Location"></select>
+  </div>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
   <div class="svg-container">
     <svg id="pressure"></svg>
@@ -53,11 +57,55 @@ const units = {
   wind: 'm/s',
   precipitation: 'mm'
 }
+const DEFAULT_LOCATION = 'Berlin';
+let currentLocation = null;
+
+function setLocation(key, label){
+  currentLocation = key;
+  localStorage.setItem('future-weather-location', key);
+  const url = new URL(window.location);
+  url.searchParams.set('location', key);
+  history.replaceState(null, '', url);
+  document.getElementById('page-title').textContent = `Pressure and Wind prediction for ${label}`;
+}
+
+function initLocationSelector(){
+  const now = new Date();
+  d3.json(`data/locations.json?t=${now.getTime()}`).then(locations => {
+    const select = document.getElementById('location-select');
+    select.innerHTML = '';
+    for (const {key, label} of locations){
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = label;
+      select.appendChild(option);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('location') || localStorage.getItem('future-weather-location') || DEFAULT_LOCATION;
+    const match = locations.find(l => l.key === requested) || locations.find(l => l.key === DEFAULT_LOCATION) || locations[0];
+
+    select.value = match.key;
+    setLocation(match.key, match.label);
+
+    select.addEventListener('change', () => {
+      const chosen = locations.find(l => l.key === select.value);
+      setLocation(chosen.key, chosen.label);
+      reload_graph();
+    });
+
+    reload_graph();
+  }).catch(err => {
+    console.error('Failed to load locations list:', err);
+  });
+}
 
 function reload_graph(){
     const now = new Date();
-    for (const title of ['pressure', 'wind', 'temperature', 'precipitation']){
-      d3.json(`${title}_data.json?t=${now.getTime()}`).then(data => {
+    if (!currentLocation) return;
+    d3.json(`data/${currentLocation}.json?t=${now.getTime()}`).then(bundle => {
+      for (const title of ['pressure', 'wind', 'temperature', 'precipitation']){
+        const data = bundle[title];
 
         // Parse the epoch timestamp and value strings into numbers
         const parsedData = data.map(([timestamp, value]) => [Number(timestamp) * 1000, Number(value)]);
@@ -360,10 +408,12 @@ function reload_graph(){
             .attr('class', 'out-of-date-overlay')
             .text('Something went wrong. Graph data out-of-date.');
         }
-      });
+      }
       let updatedInfo = document.getElementById("updated-info-tray");
       updatedInfo.innerHTML = "Last Page Sync: " + now.toLocaleString();
-    }
+    }).catch(err => {
+      console.error(`Failed to load weather data for ${currentLocation}:`, err);
+    });
   }
 function set_icon_color(fill="#ccc"){
     // Get the link element
@@ -538,7 +588,7 @@ function initNotificationTray() {
 update_changelog();
 update_notices();
 initNotificationTray();
-reload_graph();
+initLocationSelector();
 set_icon_color();
 setInterval(reload_graph, 300000);
     </script>

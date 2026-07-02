@@ -13,6 +13,30 @@ svg {
   height: auto;
 }
 
+/* Location bar */
+#location-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75em;
+  margin: 0.5em 0;
+}
+#location-bar h1 {
+  margin: 0.5em 0;
+}
+#location-select {
+  background-color: #181c20;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.3em 0.6em;
+  font-size: 0.9rem;
+}
+#location-select:hover {
+  border-color: #888;
+}
+
 /* Responsive SVG container */
 .svg-container {
   width: 100%;

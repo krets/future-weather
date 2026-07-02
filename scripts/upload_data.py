@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import time
+import re
 import requests
 import json
 import subprocess
@@ -8,75 +9,66 @@ import logging
 
 # Set up logger
 LOG = logging.getLogger(__name__)
-_BASE_URL = "http://%s/api/v1/query_range"
+_QUERY_RANGE_URL = "http://%s/api/v1/query_range"
+_LABEL_VALUES_URL = "http://%s/api/v1/label/location/values"
 
-def query(step, hours, base_url, target):
-    LOG.info(f"Running query with step={step} seconds and hours={hours}; output to '{target}'")
+
+def get_locations(base_url):
+    """Discover locations from Prometheus itself (the location label on
+    yrno_* series) so this script never needs its own hardcoded list."""
+    # Scoped to yrno_* series only -- "location" is a generic label name
+    # other exporters (e.g. openweather) may also use with unrelated values.
+    resp = requests.get(_LABEL_VALUES_URL % base_url, params={"match[]": '{__name__=~"yrno_.*"}'}).json()
+    locations = [loc for loc in resp['data'] if loc]
+    if not locations:
+        raise RuntimeError("No locations found via label/location/values; is yrno-collector running?")
+    return locations
+
+
+def display_name(location):
+    """'NewYorkCity' -> 'New York City'"""
+    return re.sub(r'(?<!^)(?=[A-Z])', ' ', location)
+
+
+def query_location(step, hours, base_url, location):
+    LOG.info(f"Querying data for {location}")
     now = int(time.time())
     yesterday = now - 24 * 60 * 60
+    loc_filter = f'location="{location}"'
 
     data = {}
     LOG.info("Pressure query")
     window = "4h"
     multiplier = "4*60*60"
-    # Try local sensor data first, fallback to yr.no if it fails
-    actual_query = f'avg(deriv(((bmp280_pressure > 750 and bmp280_pressure < 1250) and ignoring(__name__) (bmp280_temp > -40 and bmp280_temp < 200))[{window}:1m]))*{multiplier}'
-    try:
-        raw_actual_data = run_queries(base_url, [(actual_query, yesterday, now)], step)
-    except (IndexError, KeyError, Exception) as e:
-        LOG.warning(f"Failed to query local pressure data ({e}). Falling back to yr.no.")
-        fallback_query = (
-            f'(avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location="Berlin"}}[{window}])) '
-            f'or avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location=""}}[{window}])))*{multiplier}'
-        )
-        raw_actual_data = run_queries(base_url, [(fallback_query, yesterday, now)], step)
+    actual_query = f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", {loc_filter}}}[{window}]))*{multiplier}'
+    raw_actual_data = run_queries(base_url, [(actual_query, yesterday, now)], step)
 
-    pressure_prediction_template = (
-        f'(avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location="Berlin"}}[{window}] offset %sh)) '
-        f'or avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location=""}}[{window}] offset %sh)))*{multiplier}'
-    )
+    pressure_prediction_template = f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", {loc_filter}}}[{window}] offset %sh))*{multiplier}'
     prediction_queries = build_prediction_queries(pressure_prediction_template, hours)
     raw_prediction_data = run_queries(base_url, prediction_queries, step)
-    raw_merged_data = raw_actual_data + raw_prediction_data
-    smoothed_data = smooth(raw_merged_data, window_size=5)
+    smoothed_data = smooth(raw_actual_data + raw_prediction_data, window_size=5)
     data['pressure'] = smoothed_data
 
     LOG.info("Wind query")
-    wind_queries = [('yrno_wind_speed{hours="0", location=~"Berlin|"}', yesterday, now)]
-    wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s", location=~"Berlin|"} offset %sh', hours))
+    wind_queries = [(f'yrno_wind_speed{{hours="0", {loc_filter}}}', yesterday, now)]
+    wind_queries.extend(build_prediction_queries(f'yrno_wind_speed{{hours="%s", {loc_filter}}} offset %sh', hours))
     raw_wind_data = run_queries(base_url, wind_queries, step)
     smoothed_wind_data = smooth(raw_wind_data, window_size=5)
     data['wind'] = smoothed_wind_data
 
     LOG.info("Temperature query")
-    # Try local sensor data first, fallback to yr.no if it fails
-    actual_temp_query = 'avg(bmp280_temp > -40 and bmp280_temp < 200)'
-    try:
-        raw_actual_temp_data = run_queries(base_url, [(actual_temp_query, yesterday, now)], step)
-    except (IndexError, KeyError, Exception) as e:
-        LOG.warning(f"Failed to query local temperature data ({e}). Falling back to yr.no.")
-        fallback_temp_query = 'yrno_air_temperature{hours="0", location=~"Berlin|"}'
-        raw_actual_temp_data = run_queries(base_url, [(fallback_temp_query, yesterday, now)], step)
-
-    temp_prediction_queries = build_prediction_queries('yrno_air_temperature{hours="%s", location=~"Berlin|"} offset %sh', hours)
-    raw_prediction_temp_data = run_queries(base_url, temp_prediction_queries, step)
-    raw_temp_data = raw_actual_temp_data + raw_prediction_temp_data
+    temp_queries = [(f'yrno_air_temperature{{hours="0", {loc_filter}}}', yesterday, now)]
+    temp_queries.extend(build_prediction_queries(f'yrno_air_temperature{{hours="%s", {loc_filter}}} offset %sh', hours))
+    raw_temp_data = run_queries(base_url, temp_queries, step)
     smoothed_temp_data = smooth(raw_temp_data, window_size=5)
     data['temperature'] = smoothed_temp_data
 
     LOG.info("Precipitation query")
-    prec_queries = [('yrno_precipitation_amount{hours="0", location=~"Berlin|"}', yesterday, now)]
-    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s", location=~"Berlin|"} offset %sh', hours))
+    prec_queries = [(f'yrno_precipitation_amount{{hours="0", {loc_filter}}}', yesterday, now)]
+    prec_queries.extend(build_prediction_queries(f'yrno_precipitation_amount{{hours="%s", {loc_filter}}} offset %sh', hours))
     data['precipitation'] = run_queries(base_url, prec_queries, step)
 
-    LOG.info("Uploading json data files")
-    for name, values in data.items():
-        data_file = "%s_data.json" % name
-        with open(data_file, 'w') as fh:
-            json.dump(values, fh)
-        LOG.debug("Dumped: %s", data_file)
-        cmd = ["scp", "-q", data_file, target+"/%s" % data_file]
-        subprocess.run(cmd)
+    return data
 
 
 def run_queries(base_url, queries, step=60):
@@ -88,21 +80,15 @@ def run_queries(base_url, queries, step=60):
             "start": start,
             "end": end,
         }
-        try:
-            resp = requests.get(base_url, params=params).json()
-            results = resp['data']['result']
-            if not results:
-                raise IndexError
-            # A query can match multiple disjoint series (e.g. the
-            # location=~"Berlin|" bridge matching both legacy label-less
-            # samples and current location="Berlin" samples); merge them
-            # into one chronological series.
-            values = [value for series in results for value in series['values']]
-            values.sort(key=lambda v: v[0])
-            data.extend(values)
-        except IndexError:
-            LOG.warning(f"No results for query '{params}'")
-            raise
+        resp = requests.get(base_url, params=params).json()
+        results = resp['data']['result']
+        if not results:
+            raise ValueError(f"No results for query '{query}'")
+        # A query can match multiple disjoint series in edge cases; merge
+        # them into one chronological series rather than assuming exactly one.
+        values = [value for series in results for value in series['values']]
+        values.sort(key=lambda v: v[0])
+        data.extend(values)
     return data
 
 
@@ -154,6 +140,46 @@ def smooth(data, window_size=5):
     return smoothed_data
 
 
+def upload_file(local_path, target, remote_name):
+    """Upload atomically: scp to a .tmp name, then rename into place over
+    SSH, so the site never fetches a half-written file mid-transfer."""
+    remote_host, remote_dir = target.split(":", 1)
+    tmp_name = remote_name + ".tmp"
+    subprocess.run(["scp", "-q", local_path, f"{target}/{tmp_name}"], check=True)
+    subprocess.run(["ssh", remote_host, "mv", f"{remote_dir}/{tmp_name}", f"{remote_dir}/{remote_name}"], check=True)
+
+
+def query(step, hours, base_url, target):
+    LOG.info(f"Running query with step={step} seconds and hours={hours}; output to '{target}'")
+    locations = get_locations(base_url)
+    LOG.info(f"Discovered locations: {locations}")
+
+    data_target = target + "/data"
+    remote_host, remote_dir = target.split(":", 1)
+    subprocess.run(["ssh", remote_host, "mkdir", "-p", remote_dir + "/data"], check=True)
+
+    manifest = [{"key": loc, "label": display_name(loc)} for loc in sorted(locations)]
+    with open("locations.json", 'w') as fh:
+        json.dump(manifest, fh)
+    upload_file("locations.json", data_target, "locations.json")
+
+    for location in locations:
+        try:
+            data = query_location(step, hours, base_url, location)
+        except Exception as e:
+            LOG.warning(f"Failed to gather data for {location} ({e}); leaving its published data as-is.")
+            continue
+
+        data_file = f"{location}.json"
+        with open(data_file, 'w') as fh:
+            json.dump(data, fh)
+        LOG.debug("Dumped: %s", data_file)
+        try:
+            upload_file(data_file, data_target, data_file)
+        except subprocess.CalledProcessError as e:
+            LOG.warning(f"Failed to upload data for {location} ({e}); leaving its published data as-is.")
+
+
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser()
@@ -176,7 +202,7 @@ def main():
     LOG.setLevel(level)
 
     # Call query function with arguments
-    query(args.step, args.hours, _BASE_URL % args.source, args.target)
+    query(args.step, args.hours, _QUERY_RANGE_URL % args.source, args.target)
 
 
 if __name__ == '__main__':

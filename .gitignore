@@ -4,6 +4,6 @@ scripts/tmp*
 __pycache__
 venv
 *.sqlite
-html/*_data.json
 html/notices.json
 html/admin.php
+html/data/
