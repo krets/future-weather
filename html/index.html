@@ -60,11 +60,15 @@ const units = {
 const DEFAULT_LOCATION = 'Berlin';
 let currentLocation = null;
 
-function setLocation(key, label){
+function setLocation(key, label, updateUrl){
   currentLocation = key;
   localStorage.setItem('future-weather-location', key);
   const url = new URL(window.location);
-  url.searchParams.set('location', key);
+  if (updateUrl){
+    url.searchParams.set('location', key);
+  }else{
+    url.searchParams.delete('location');
+  }
   history.replaceState(null, '', url);
   document.getElementById('page-title').textContent = `Pressure and Wind prediction for ${label}`;
 }
@@ -81,16 +85,21 @@ function initLocationSelector(){
       select.appendChild(option);
     }
 
+    // With only one location published, there's nothing to choose --
+    // hide the dropdown and don't clutter the URL with ?location=.
+    const hasChoice = locations.length > 1;
+    select.style.display = hasChoice ? '' : 'none';
+
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('location') || localStorage.getItem('future-weather-location') || DEFAULT_LOCATION;
     const match = locations.find(l => l.key === requested) || locations.find(l => l.key === DEFAULT_LOCATION) || locations[0];
 
     select.value = match.key;
-    setLocation(match.key, match.label);
+    setLocation(match.key, match.label, hasChoice);
 
     select.addEventListener('change', () => {
       const chosen = locations.find(l => l.key === select.value);
-      setLocation(chosen.key, chosen.label);
+      setLocation(chosen.key, chosen.label, hasChoice);
       reload_graph();
     });
 
