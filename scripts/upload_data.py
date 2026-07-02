@@ -25,10 +25,17 @@ def query(step, hours, base_url, target):
         raw_actual_data = run_queries(base_url, [(actual_query, yesterday, now)], step)
     except (IndexError, KeyError, Exception) as e:
         LOG.warning(f"Failed to query local pressure data ({e}). Falling back to yr.no.")
-        fallback_query = f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location=~"Berlin|"}}[{window}]))*{multiplier}'
+        fallback_query = (
+            f'(avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location="Berlin"}}[{window}])) '
+            f'or avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location=""}}[{window}])))*{multiplier}'
+        )
         raw_actual_data = run_queries(base_url, [(fallback_query, yesterday, now)], step)
 
-    prediction_queries = build_prediction_queries(f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location=~"Berlin|"}}[{window}] offset %sh))*{multiplier}', hours)
+    pressure_prediction_template = (
+        f'(avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location="Berlin"}}[{window}] offset %sh)) '
+        f'or avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location=""}}[{window}] offset %sh)))*{multiplier}'
+    )
+    prediction_queries = build_prediction_queries(pressure_prediction_template, hours)
     raw_prediction_data = run_queries(base_url, prediction_queries, step)
     raw_merged_data = raw_actual_data + raw_prediction_data
     smoothed_data = smooth(raw_merged_data, window_size=5)
@@ -106,7 +113,7 @@ def build_prediction_queries(template, hours, index_offset=1):
     for i in range(hours):
         hour = i + index_offset
         queries.append((
-            template % (hour, hour),
+            template.replace('%s', str(hour)),
             now + i * 60 * 60,
             now + hour * 60 * 60,
         ))
