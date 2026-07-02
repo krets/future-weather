@@ -25,18 +25,18 @@ def query(step, hours, base_url, target):
         raw_actual_data = run_queries(base_url, [(actual_query, yesterday, now)], step)
     except (IndexError, KeyError, Exception) as e:
         LOG.warning(f"Failed to query local pressure data ({e}). Falling back to yr.no.")
-        fallback_query = f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location="Berlin"}}[{window}]))*{multiplier}'
+        fallback_query = f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="0", location=~"Berlin|"}}[{window}]))*{multiplier}'
         raw_actual_data = run_queries(base_url, [(fallback_query, yesterday, now)], step)
 
-    prediction_queries = build_prediction_queries(f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location="Berlin"}}[{window}] offset %sh))*{multiplier}', hours)
+    prediction_queries = build_prediction_queries(f'avg(deriv(yrno_air_pressure_at_sea_level{{hours="%s", location=~"Berlin|"}}[{window}] offset %sh))*{multiplier}', hours)
     raw_prediction_data = run_queries(base_url, prediction_queries, step)
     raw_merged_data = raw_actual_data + raw_prediction_data
     smoothed_data = smooth(raw_merged_data, window_size=5)
     data['pressure'] = smoothed_data
 
     LOG.info("Wind query")
-    wind_queries = [('yrno_wind_speed{hours="0", location="Berlin"}', yesterday, now)]
-    wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s", location="Berlin"} offset %sh', hours))
+    wind_queries = [('yrno_wind_speed{hours="0", location=~"Berlin|"}', yesterday, now)]
+    wind_queries.extend(build_prediction_queries('yrno_wind_speed{hours="%s", location=~"Berlin|"} offset %sh', hours))
     raw_wind_data = run_queries(base_url, wind_queries, step)
     smoothed_wind_data = smooth(raw_wind_data, window_size=5)
     data['wind'] = smoothed_wind_data
@@ -48,18 +48,18 @@ def query(step, hours, base_url, target):
         raw_actual_temp_data = run_queries(base_url, [(actual_temp_query, yesterday, now)], step)
     except (IndexError, KeyError, Exception) as e:
         LOG.warning(f"Failed to query local temperature data ({e}). Falling back to yr.no.")
-        fallback_temp_query = 'yrno_air_temperature{hours="0", location="Berlin"}'
+        fallback_temp_query = 'yrno_air_temperature{hours="0", location=~"Berlin|"}'
         raw_actual_temp_data = run_queries(base_url, [(fallback_temp_query, yesterday, now)], step)
 
-    temp_prediction_queries = build_prediction_queries('yrno_air_temperature{hours="%s", location="Berlin"} offset %sh', hours)
+    temp_prediction_queries = build_prediction_queries('yrno_air_temperature{hours="%s", location=~"Berlin|"} offset %sh', hours)
     raw_prediction_temp_data = run_queries(base_url, temp_prediction_queries, step)
     raw_temp_data = raw_actual_temp_data + raw_prediction_temp_data
     smoothed_temp_data = smooth(raw_temp_data, window_size=5)
     data['temperature'] = smoothed_temp_data
 
     LOG.info("Precipitation query")
-    prec_queries = [('yrno_precipitation_amount{hours="0", location="Berlin"}', yesterday, now)]
-    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s", location="Berlin"} offset %sh', hours))
+    prec_queries = [('yrno_precipitation_amount{hours="0", location=~"Berlin|"}', yesterday, now)]
+    prec_queries.extend(build_prediction_queries('yrno_precipitation_amount{hours="%s", location=~"Berlin|"} offset %sh', hours))
     data['precipitation'] = run_queries(base_url, prec_queries, step)
 
     LOG.info("Uploading json data files")
@@ -83,7 +83,16 @@ def run_queries(base_url, queries, step=60):
         }
         try:
             resp = requests.get(base_url, params=params).json()
-            data.extend(resp['data']['result'][0]['values'])
+            results = resp['data']['result']
+            if not results:
+                raise IndexError
+            # A query can match multiple disjoint series (e.g. the
+            # location=~"Berlin|" bridge matching both legacy label-less
+            # samples and current location="Berlin" samples); merge them
+            # into one chronological series.
+            values = [value for series in results for value in series['values']]
+            values.sort(key=lambda v: v[0])
+            data.extend(values)
         except IndexError:
             LOG.warning(f"No results for query '{params}'")
             raise
