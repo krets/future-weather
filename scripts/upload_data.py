@@ -149,7 +149,7 @@ def upload_file(local_path, target, remote_name):
     subprocess.run(["ssh", remote_host, "mv", f"{remote_dir}/{tmp_name}", f"{remote_dir}/{remote_name}"], check=True)
 
 
-def query(step, hours, source, target):
+def query(step, hours, source, target, visible_locations=None):
     LOG.info(f"Running query with step={step} seconds and hours={hours}; output to '{target}'")
     locations = get_locations(source)
     LOG.info(f"Discovered locations: {locations}")
@@ -159,7 +159,14 @@ def query(step, hours, source, target):
     remote_host, remote_dir = target.split(":", 1)
     subprocess.run(["ssh", remote_host, "mkdir", "-p", remote_dir + "/data"], check=True)
 
-    manifest = [{"key": loc, "label": display_name(loc)} for loc in sorted(locations)]
+    # Every discovered location still gets queried and its bundle kept warm
+    # below, even if not yet published in the manifest -- that way a brand
+    # new location (which needs ~36h before query_location stops failing on
+    # missing prediction hours) can silently build up history in the
+    # background, and "releasing" it later is just a manifest change, not
+    # a fresh cold start.
+    published = [loc for loc in locations if loc in visible_locations] if visible_locations else locations
+    manifest = [{"key": loc, "label": display_name(loc)} for loc in sorted(published)]
     with open("locations.json", 'w') as fh:
         json.dump(manifest, fh)
     upload_file("locations.json", data_target, "locations.json")
@@ -188,6 +195,9 @@ def main():
     parser.add_argument('--hours', type=int, default=12, help='Hours of predicted data')
     parser.add_argument('--source', type=str, default='localhost:9090', help='Prometheus host and port')
     parser.add_argument('--target', type=str, default='user@remote:/path/to/data', help='SSH target for json upload')
+    parser.add_argument('--visible-locations', type=str, default=None,
+                         help='Comma-separated locations to publish in locations.json (default: all discovered). '
+                              'Other locations still get queried/uploaded, just left out of the manifest.')
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose messages')
     parser.add_argument('-d', '--debug', action='store_true', help='Enable debug messages')
     args = parser.parse_args()
@@ -202,8 +212,10 @@ def main():
 
     LOG.setLevel(level)
 
+    visible_locations = args.visible_locations.split(",") if args.visible_locations else None
+
     # Call query function with arguments
-    query(args.step, args.hours, args.source, args.target)
+    query(args.step, args.hours, args.source, args.target, visible_locations)
 
 
 if __name__ == '__main__':
