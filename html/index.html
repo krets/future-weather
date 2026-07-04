@@ -19,16 +19,36 @@
   </div>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
   <div class="svg-container">
-    <svg id="pressure"></svg>
+    <div class="chart-wrapper">
+      <svg id="pressure"></svg>
+      <div class="chart-loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
   </div>
   <div class="svg-container">
-    <svg id="wind"></svg>
+    <div class="chart-wrapper">
+      <svg id="wind"></svg>
+      <div class="chart-loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
   </div>
   <div class="svg-container">
-    <svg id="temperature"></svg>
+    <div class="chart-wrapper">
+      <svg id="temperature"></svg>
+      <div class="chart-loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
   </div>
   <div class="svg-container">
-    <svg id="precipitation"></svg>
+    <div class="chart-wrapper">
+      <svg id="precipitation"></svg>
+      <div class="chart-loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
   </div>
   <!-- Options Drawer -->
   <div id="options-drawer" class="collapsed">
@@ -69,6 +89,45 @@ const tooltip = d3.select('body').append('div')
   .attr('id', 'chart-tooltip')
   .attr('class', 'chart-tooltip')
   .style('opacity', 0);
+
+const locationTimezones = {
+  'Berlin': 'Europe/Berlin',
+  'Harpenden': 'Europe/London',
+  'Laconia': 'America/New_York',
+  'LosAngeles': 'America/Los_Angeles',
+  'NewDelhi': 'Asia/Kolkata',
+  'NewYorkCity': 'America/New_York'
+};
+
+function getTimezoneOffset(timezone, date) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+    });
+    const parts = formatter.formatToParts(date);
+    
+    const utcFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'UTC',
+      year: 'numeric', month: 'numeric', day: 'numeric',
+      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+    });
+    const utcParts = utcFormatter.formatToParts(date);
+
+    const getVal = (p) => {
+      const o = {};
+      p.forEach(x => { o[x.type] = parseInt(x.value, 10); });
+      return Date.UTC(o.year, o.month - 1, o.day, o.hour, o.minute, o.second);
+    };
+
+    return getVal(parts) - getVal(utcParts);
+  } catch (e) {
+    console.error(`Failed to calculate timezone offset for ${timezone}:`, e);
+    return 0;
+  }
+}
+
 const DEFAULT_LOCATION = 'Berlin';
 let currentLocation = null;
 
@@ -149,16 +208,32 @@ function initLocationSelector(){
 function reload_graph(){
     const now = new Date();
     if (!currentLocation) return;
+    const timezone = locationTimezones[currentLocation] || 'UTC';
+    
+    // Add loading class to all chart wrappers
+    d3.selectAll('.chart-wrapper').classed('loading', true);
+    
     d3.json(`data/${currentLocation}.json?t=${now.getTime()}`).then(bundle => {
+      // Remove loading class when successfully fetched
+      d3.selectAll('.chart-wrapper').classed('loading', false);
+      
       for (const title of ['pressure', 'wind', 'temperature', 'precipitation']){
         const data = bundle[title];
 
-        // Parse the epoch timestamp and value strings into numbers
-        const parsedData = data.map(([timestamp, value]) => [Number(timestamp) * 1000, Number(value)]);
+        // Parse the epoch timestamp, shifting each to the target timezone's local time
+        const parsedData = data.map(([timestamp, value]) => {
+          const utcMs = Number(timestamp) * 1000;
+          const offset = getTimezoneOffset(timezone, new Date(utcMs));
+          return [utcMs + offset, Number(value)];
+        });
+        
+        // Calculate the offset at the current time and shift 'now' to local time
+        const nowOffset = getTimezoneOffset(timezone, now);
+        const localNowMs = now.getTime() + nowOffset;
         
         // Check if data is out-of-date (last data point is in the past)
         const lastDataPoint = parsedData[parsedData.length - 1];
-        const isOutOfDate = lastDataPoint[0] < now.getTime();
+        const isOutOfDate = lastDataPoint[0] < localNowMs;
         
         // const filteredData = parsedData.filter(d => d[0] >= now && d[0] <= twentyMinutesFromNow);
         if(title === 'pressure'){
@@ -193,7 +268,7 @@ function reload_graph(){
           .attr('transform', `translate(${margin.left},${margin.top})`);
         svg.selectAll('*').remove();
 
-        const x = d3.scaleTime()
+        const x = d3.scaleUtc()
           .domain(d3.extent(parsedData, d => d[0]))
           .range([0, width]);
 
@@ -301,8 +376,8 @@ function reload_graph(){
             .attr('stroke-width', 1);
         }
 
-        const data_past = parsedData.filter(d=>d[0] <= now.getTime());
-        const data_future = parsedData.filter(d=>d[0] > now.getTime());
+                const data_past = parsedData.filter(d=>d[0] <= localNowMs);
+        const data_future = parsedData.filter(d=>d[0] > localNowMs);
 
         // Draw the past line
         const line = d3.line()
@@ -381,15 +456,15 @@ function reload_graph(){
           .attr("d", area)
 
         svg.append('line')
-          .attr('x1', x(now))
+          .attr('x1', x(localNowMs))
           .attr('y1', -5)
-          .attr('x2', x(now))
+          .attr('x2', x(localNowMs))
           .attr('y2', height)
           .attr('stroke', 'lightblue')
           .attr('stroke-width', 2);
 
         svg.append('text')
-          .attr('x', x(now))
+          .attr('x', x(localNowMs))
           .attr('y', -10)
           .attr('text-anchor', 'middle')
           .style('font-size', '0.5rem')
@@ -399,7 +474,7 @@ function reload_graph(){
 
         // Draw the x and y axes
         const xAxis = d3.axisBottom(x)
-          .tickFormat(d3.timeFormat('%H:%M'))
+          .tickFormat(d3.utcFormat('%H:%M'))
           .tickSizeOuter(0);
         const yAxis = d3.axisLeft(y)
           .tickValues(tickValues)
@@ -419,7 +494,7 @@ function reload_graph(){
         svg.selectAll("g.y-axis text")
            .style("stroke-width", null);
 
-        let hours_ahead = Math.round((parsedData[parsedData.length-1][0] - Date.now())/1000/3600)
+        let hours_ahead = Math.round((parsedData[parsedData.length-1][0] - localNowMs)/1000/3600)
 
         svg.append('text')
           .attr('x', width / 2)
@@ -477,7 +552,7 @@ function reload_graph(){
 
             tooltip
               .html(`
-                <div class="tooltip-time">${d3.timeFormat('%A, %H:%M')(new Date(d[0]))}</div>
+                <div class="tooltip-time">${d3.utcFormat('%A, %H:%M')(new Date(d[0]))}</div>
                 <div class="tooltip-value">${title.charAt(0).toUpperCase() + title.slice(1)}: <strong>${d[1].toFixed(2)}</strong> ${units[title]}</div>
               `)
               .style('left', (event.pageX + 15) + 'px')
@@ -519,6 +594,8 @@ function reload_graph(){
       let updatedInfo = document.getElementById("updated-info-drawer");
       updatedInfo.innerHTML = "Last Page Sync: " + now.toLocaleString();
     }).catch(err => {
+      // Remove loading class on error as well
+      d3.selectAll('.chart-wrapper').classed('loading', false);
       console.error(`Failed to load weather data for ${currentLocation}:`, err);
     });
   }
