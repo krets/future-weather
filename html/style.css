@@ -25,17 +25,7 @@ svg {
 #location-bar h1 {
   margin: 0.5em 0;
 }
-#location-select {
-  background-color: #181c20;
-  color: #ccc;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.3em 0.6em;
-  font-size: 0.9rem;
-}
-#location-select:hover {
-  border-color: #888;
-}
+
 
 /* Responsive SVG container */
 .svg-container {
@@ -79,16 +69,16 @@ svg {
   color: #444;
 }
 
-/* Notification Tray */
-#notification-tray {
+/* Options Drawer */
+#options-drawer {
   position: fixed;
   top: 0;
   right: 0;
   width: 350px;
   height: 100vh;
-  background-color: rgba(40, 40, 40, 0.95);
-  backdrop-filter: blur(10px);
-  border-left: 1px solid #555;
+  background-color: rgba(24, 28, 32, 0.95);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid #444;
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
   z-index: 1000;
@@ -97,25 +87,25 @@ svg {
 
 /* Mobile responsive styles */
 @media (max-width: 768px) {
-  #notification-tray {
+  #options-drawer {
     width: 80%;
     height: 100%;
     border-left: none;
-    border-top: 1pt solid #555;
+    border-top: 1pt solid #444;
   }
 }
 
 @media (max-width: 480px) {
-  #notification-tray {
+  #options-drawer {
     width: 95%;
     height: 100%;
   }
   
-  #notification-content {
+  #drawer-content {
     padding: 2em;
   }
   
-  #tray-header h3 {
+  #drawer-header h3 {
     font-size: 2.5rem;
   }
   
@@ -145,20 +135,29 @@ svg {
     font-size: 1.4rem;
   }
   
-  #tray-footer p {
+  #drawer-footer p {
     font-size: 1.5rem;
   }
   
-  #updated-info-tray {
+  #updated-info-drawer {
     font-size: 1.5rem;
+  }
+  
+  #drawer-locations-section h4 {
+    font-size: 1.5rem;
+  }
+  
+  .location-btn {
+    font-size: 1.6rem;
+    padding: 1em 1.2em;
   }
 }
 
-#notification-tray:not(.collapsed) {
+#options-drawer:not(.collapsed) {
   transform: translateX(0);
 }
 
-#notification-content {
+#drawer-content {
   padding: 1.8em;
   height: calc(100vh - 40px);
   display: flex;
@@ -166,41 +165,117 @@ svg {
   overflow-y: auto;
 }
 
-#tray-header {
+#drawer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1pt solid #555;
-  margin-bottom: .4em;
+  margin-bottom: 1em;
 }
 
-#tray-header h3 {
+#drawer-header h3 {
   margin: 0;
   color: #ccc;
 }
 
-#tray-close {
+#drawer-close {
   font-size: 3em;
   cursor: pointer;
   color: #999;
   line-height: 1;
 }
 
-#tray-close:hover {
+#drawer-close:hover {
   color: #ccc;
 }
 
-#updated-info-tray {
-  font-size: 1em;
+/* Locations Selection inside Drawer */
+#drawer-locations-section {
+  margin-bottom: 2em;
+  text-align: left;
+  border-bottom: 1pt solid #444;
+  padding-bottom: 1.5em;
+}
+
+#drawer-locations-section h4 {
+  margin: 0 0 0.75em 0;
+  color: #aaa;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#drawer-locations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.location-btn {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.7em 0.9em;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.location-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: #888;
+  color: white;
+}
+
+.location-btn:focus {
+  outline: none;
+  border-color: #fc0;
+}
+
+.location-btn.active {
+  background-color: rgba(115, 191, 105, 0.15);
+  border-color: #73bf69;
+  color: #73bf69;
+  font-weight: bold;
+}
+
+.location-btn .checkmark {
+  display: none;
+  color: #73bf69;
+}
+
+.location-btn.active .checkmark {
+  display: inline;
+}
+
+/* Notifications in Drawer */
+#drawer-notifications-section {
+  text-align: left;
+}
+
+#drawer-notifications-section h4 {
+  margin: 0 0 0.75em 0;
+  color: #aaa;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+#updated-info-drawer {
+  font-size: 0.95em;
   color: #888;
   margin-bottom: 1em;
 }
 
-#changelog-container-tray {
+#changelog-container-drawer {
   flex: 1;
   margin-bottom: 2em;
 }
-
 
 #changelog-list {
   list-style: none;
@@ -235,91 +310,108 @@ svg {
   line-height: 1.4;
 }
 
-#tray-footer {
+#drawer-footer {
   margin-top: auto;
   padding-top: 1em;
   border-top: 1pt solid #555;
 }
 
-#tray-footer p {
+#drawer-footer p {
   font-size: 0.75rem;
   color: #888;
   margin: 0;
 }
 
-#tray-footer a {
+#drawer-footer a {
   color: #fc0;
 }
 
-/* Notification Icon */
-#notification-icon {
+/* Hamburger Menu Button (Top Right) */
+#menu-toggle {
   position: fixed;
-  bottom: 1.8em;
-  right: 1.8em;
-  width: 3em;
-  height: 3em;
-  background-color: #444;
+  top: 1.5em;
+  right: 1.5em;
+  width: 3.2em;
+  height: 3.2em;
+  background-color: #181c20;
+  border: 1px solid #555;
   border-radius: 50%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  z-index: 999;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-#notification-icon:hover {
-  background-color: #555;
+#menu-toggle:hover {
+  border-color: #888;
+  background-color: #222;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
-#notification-icon.has-notifications {
-  background-color: #2222c8;
+#menu-toggle .bar {
+  width: 18px;
+  height: 2px;
+  background-color: #ccc;
+  transition: all 0.3s ease;
+  display: block;
+  transform-origin: center;
 }
 
-#notification-icon.has-notifications:hover {
-  background-color: #3333d8;
+#menu-toggle[aria-expanded="true"] {
+  background-color: #282828;
 }
 
-#notification-icon::before {
-  content: "i";
-  font-size: 2em;
-  color: #ccc;
-  font-weight: bold;
+#menu-toggle[aria-expanded="true"] .bar:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
 }
 
-#notification-badge {
+#menu-toggle[aria-expanded="true"] .bar:nth-child(2) {
+  opacity: 0;
+}
+
+#menu-toggle[aria-expanded="true"] .bar:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Hamburger Menu Notification Badge */
+#menu-toggle .badge {
   position: absolute;
-  top: -0.75em;
-  right: -0.75em;
+  top: -4px;
+  right: -4px;
   background-color: #ff5285;
   color: white;
   border-radius: 50%;
-  width: 1.8em;
-  height: 1.8em;
+  width: 1.6em;
+  height: 1.6em;
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 1em;
+  font-size: 0.75rem;
   font-weight: bold;
+  border: 2px solid #181c20;
+}
+
+@keyframes badge-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+#menu-toggle.has-notifications .badge {
+  animation: badge-pulse 2s infinite ease-in-out;
 }
 
 @media (max-width: 480px) {
-  #notification-icon {
-    bottom: 1.5em;
-    right: 1.5em;
-    width: 4em;
-    height: 4em;
-  }
-  
-  #notification-icon::before {
-    font-size: 2.5em;
-    font-weight: bold;
-  }
-  
-  #notification-badge {
-    width: 2.2em;
-    height: 2.2em;
-    font-size: 1.3em;
+  #menu-toggle {
+    top: 1em;
+    right: 1em;
+    width: 3.5em;
+    height: 3.5em;
   }
 }
 

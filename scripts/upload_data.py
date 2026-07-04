@@ -192,7 +192,7 @@ def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--step', type=int, default=60, help='Data resolution in seconds')
-    parser.add_argument('--hours', type=int, default=12, help='Hours of predicted data')
+    parser.add_argument('--hours', type=int, default=36, help='Hours of predicted data')
     parser.add_argument('--source', type=str, default='localhost:9090', help='Prometheus host and port')
     parser.add_argument('--target', type=str, default='user@remote:/path/to/data', help='SSH target for json upload')
     parser.add_argument('--visible-locations', type=str, default=None,

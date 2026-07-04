@@ -8,9 +8,14 @@
     <link rel="stylesheet" href="style.css?_=20250929">
   </head>
   <body>
+  <button id="menu-toggle" aria-label="Open Menu" aria-expanded="false">
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span id="menu-badge" class="badge"></span>
+  </button>
   <div id="location-bar">
     <h1 id="page-title">Pressure and Wind prediction</h1>
-    <select id="location-select" aria-label="Location"></select>
   </div>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
   <div class="svg-container">
@@ -25,27 +30,30 @@
   <div class="svg-container">
     <svg id="precipitation"></svg>
   </div>
-  <!-- Notification Tray -->
-  <div id="notification-tray" class="collapsed">
-    <div id="notification-content">
-      <div id="tray-header">
-        <h3>Recent Changes</h3>
-        <span id="tray-close">&times;</span>
+  <!-- Options Drawer -->
+  <div id="options-drawer" class="collapsed">
+    <div id="drawer-content">
+      <div id="drawer-header">
+        <h3>Menu</h3>
+        <span id="drawer-close">&times;</span>
       </div>
-      <div id="updated-info-tray"></div>
-      <div id="notices-container-tray"></div>
-      <div id="changelog-container-tray">
-        <ul id="changelog-list"></ul>
+      <!-- Locations Selector inside Drawer -->
+      <div id="drawer-locations-section" style="display: none;">
+        <h4>Locations</h4>
+        <div id="drawer-locations-list" role="listbox" aria-label="Locations"></div>
       </div>
-      <div id="tray-footer">
+      <div id="drawer-notifications-section">
+        <h4>Recent Changes</h4>
+        <div id="updated-info-drawer"></div>
+        <div id="notices-container-drawer"></div>
+        <div id="changelog-container-drawer">
+          <ul id="changelog-list"></ul>
+        </div>
+      </div>
+      <div id="drawer-footer">
         <p>Weather data provided by <a href="https://www.yr.no/">yr.no</a> and my home weather station.</p>
       </div>
     </div>
-  </div>
-  
-  <!-- Notification Icon -->
-  <div id="notification-icon">
-    <span id="notification-badge"></span>
   </div>
     <script>
 const green = "#73bf69";
@@ -71,38 +79,63 @@ function setLocation(key, label, updateUrl){
   }
   history.replaceState(null, '', url);
   document.getElementById('page-title').textContent = `Pressure and Wind prediction for ${label}`;
+
+  // Update active state class on drawer location buttons
+  const buttons = document.querySelectorAll('.location-btn');
+  buttons.forEach(btn => {
+    if (btn.getAttribute('data-location-key') === key) {
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+    } else {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+    }
+  });
 }
 
 function initLocationSelector(){
   const now = new Date();
   d3.json(`data/locations.json?t=${now.getTime()}`).then(locations => {
-    const select = document.getElementById('location-select');
-    select.innerHTML = '';
-    for (const {key, label} of locations){
-      const option = document.createElement('option');
-      option.value = key;
-      option.textContent = label;
-      select.appendChild(option);
-    }
+    const container = document.getElementById('drawer-locations-list');
+    const section = document.getElementById('drawer-locations-section');
+    container.innerHTML = '';
 
     // With only one location published, there's nothing to choose --
-    // hide the dropdown and don't clutter the URL with ?location=.
+    // hide the selector and don't clutter the URL with ?location=.
     const hasChoice = locations.length > 1;
-    select.style.display = hasChoice ? '' : 'none';
+    section.style.display = hasChoice ? 'block' : 'none';
+
+    for (const {key, label} of locations){
+      const btn = document.createElement('button');
+      btn.className = 'location-btn';
+      btn.setAttribute('role', 'option');
+      btn.setAttribute('data-location-key', key);
+      
+      const textSpan = document.createElement('span');
+      textSpan.textContent = label;
+      btn.appendChild(textSpan);
+      
+      const checkSpan = document.createElement('span');
+      checkSpan.className = 'checkmark';
+      checkSpan.innerHTML = '&#10003;';
+      btn.appendChild(checkSpan);
+
+      btn.addEventListener('click', () => {
+        setLocation(key, label, hasChoice);
+        reload_graph();
+        // Close drawer after selection
+        document.getElementById('options-drawer').classList.add('collapsed');
+        document.getElementById('menu-toggle').setAttribute('aria-expanded', 'false');
+      });
+
+      container.appendChild(btn);
+    }
 
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('location') || localStorage.getItem('future-weather-location') || DEFAULT_LOCATION;
     const match = locations.find(l => l.key === requested) || locations.find(l => l.key === DEFAULT_LOCATION) || locations[0];
 
-    select.value = match.key;
     setLocation(match.key, match.label, hasChoice);
-
-    select.addEventListener('change', () => {
-      const chosen = locations.find(l => l.key === select.value);
-      setLocation(chosen.key, chosen.label, hasChoice);
-      reload_graph();
-    });
-
     reload_graph();
   }).catch(err => {
     console.error('Failed to load locations list:', err);
@@ -418,7 +451,7 @@ function reload_graph(){
             .text('Something went wrong. Graph data out-of-date.');
         }
       }
-      let updatedInfo = document.getElementById("updated-info-tray");
+      let updatedInfo = document.getElementById("updated-info-drawer");
       updatedInfo.innerHTML = "Last Page Sync: " + now.toLocaleString();
     }).catch(err => {
       console.error(`Failed to load weather data for ${currentLocation}:`, err);
@@ -470,7 +503,7 @@ function update_notices(){
     .then(response => response.json())
     .then(notices => {
       console.log('Loaded notices:', notices);
-      const noticesContainer = document.getElementById('notices-container-tray');
+      const noticesContainer = document.getElementById('notices-container-drawer');
       let unreadNotices = false;
       let urgentNotices = false;
       let noticeCount = 0;
@@ -491,7 +524,7 @@ function update_notices(){
         dismissBtn.addEventListener('click', () => {
           noticeElement.classList.add('read');
           localStorage.setItem(`notice-${notice.id}-read`, true);
-          updateNotificationIcon();
+          updateMenuBadge();
         });
 
         const dateSpan = document.createElement('span');
@@ -524,11 +557,12 @@ function update_notices(){
         }
       });
 
-      updateNotificationIcon();
+      updateMenuBadge();
       
       // Auto-expand tray for urgent notices
       if (urgentNotices) {
-        document.getElementById('notification-tray').classList.remove('collapsed');
+        document.getElementById('options-drawer').classList.remove('collapsed');
+        document.getElementById('menu-toggle').setAttribute('aria-expanded', 'true');
       }
     });
 }
@@ -557,46 +591,57 @@ function update_changelog(){
     });
 }
 
-function updateNotificationIcon() {
-  const notificationIcon = document.getElementById('notification-icon');
-  const notificationBadge = document.getElementById('notification-badge');
+function updateMenuBadge() {
+  const menuToggle = document.getElementById('menu-toggle');
+  const menuBadge = document.getElementById('menu-badge');
   const unreadNotices = document.querySelectorAll('.notice:not(.read)').length;
   
-  // Update badge
   if (unreadNotices > 0) {
-    notificationBadge.textContent = unreadNotices;
-    notificationBadge.style.display = 'flex';
-    notificationIcon.classList.add('has-notifications');
+    menuBadge.textContent = unreadNotices;
+    menuBadge.style.display = 'flex';
+    menuToggle.classList.add('has-notifications');
   } else {
-    notificationBadge.style.display = 'none';
-    notificationIcon.classList.remove('has-notifications');
+    menuBadge.style.display = 'none';
+    menuToggle.classList.remove('has-notifications');
   }
 }
 
-function initNotificationTray() {
-  const notificationIcon = document.getElementById('notification-icon');
-  const notificationTray = document.getElementById('notification-tray');
-  const trayClose = document.getElementById('tray-close');
+function initMenuDrawer() {
+  const menuToggle = document.getElementById('menu-toggle');
+  const optionsDrawer = document.getElementById('options-drawer');
+  const drawerClose = document.getElementById('drawer-close');
   
-  notificationIcon.addEventListener('click', () => {
-    notificationTray.classList.toggle('collapsed');
+  menuToggle.addEventListener('click', () => {
+    const isCollapsed = optionsDrawer.classList.toggle('collapsed');
+    menuToggle.setAttribute('aria-expanded', !isCollapsed);
   });
   
-  trayClose.addEventListener('click', () => {
-    notificationTray.classList.add('collapsed');
+  drawerClose.addEventListener('click', () => {
+    optionsDrawer.classList.add('collapsed');
+    menuToggle.setAttribute('aria-expanded', 'false');
   });
   
-  // Close tray when clicking outside
+  // Close drawer when clicking outside
   document.addEventListener('click', (e) => {
-    if (!notificationTray.contains(e.target) && !notificationIcon.contains(e.target)) {
-      notificationTray.classList.add('collapsed');
+    if (!optionsDrawer.contains(e.target) && !menuToggle.contains(e.target)) {
+      optionsDrawer.classList.add('collapsed');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  // Close drawer on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !optionsDrawer.classList.contains('collapsed')) {
+      optionsDrawer.classList.add('collapsed');
+      menuToggle.setAttribute('aria-expanded', 'false');
+      menuToggle.focus();
     }
   });
 }
 
 update_changelog();
 update_notices();
-initNotificationTray();
+initMenuDrawer();
 initLocationSelector();
 set_icon_color();
 setInterval(reload_graph, 300000);
