@@ -584,3 +584,54 @@ svg.out-of-date {
   opacity: 0.5;
   filter: grayscale(50%);
 }
+
+/* Tooltip Card */
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background-color: rgba(24, 28, 32, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: #ccc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  font-family: sans-serif;
+  z-index: 1000;
+  text-align: left;
+  line-height: 1.4;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.tooltip-time {
+  font-weight: bold;
+  color: #888;
+  margin-bottom: 2px;
+  font-size: 0.75rem;
+}
+
+.tooltip-value {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.tooltip-value strong {
+  color: #fc0;
+}
+
+/* Hover Tracking Elements */
+.hover-line {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-dasharray: 4,4;
+  stroke-width: 1px;
+  pointer-events: none;
+}
+
+.hover-circle {
+  fill: #fff;
+  stroke: #181c20;
+  stroke-width: 2px;
+  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+}
