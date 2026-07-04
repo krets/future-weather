@@ -5,7 +5,7 @@
   <title>Future Weather</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="style.css?_=20250929">
+    <link rel="stylesheet" href="style.css?_=20260704">
   </head>
   <body>
   <button id="menu-toggle" aria-label="Open Menu" aria-expanded="false">
@@ -101,27 +101,45 @@ const locationTimezones = {
 
 function getTimezoneOffset(timezone, date) {
   try {
+    const parseParts = (parts) => {
+      const o = {};
+      parts.forEach(p => {
+        if (p.type !== 'literal') {
+          o[p.type] = p.value;
+        }
+      });
+
+      let hour = parseInt(o.hour, 10);
+      if (o.dayPeriod) {
+        const period = o.dayPeriod.toLowerCase();
+        if (period.includes('pm') && hour < 12) hour += 12;
+        if (period.includes('am') && hour === 12) hour = 0;
+      }
+      if (hour === 24) hour = 0;
+
+      return Date.UTC(
+        parseInt(o.year, 10),
+        parseInt(o.month, 10) - 1,
+        parseInt(o.day, 10),
+        hour,
+        parseInt(o.minute, 10),
+        parseInt(o.second, 10)
+      );
+    };
+
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: timezone,
       year: 'numeric', month: 'numeric', day: 'numeric',
-      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+      hour: 'numeric', minute: 'numeric', second: 'numeric'
     });
-    const parts = formatter.formatToParts(date);
     
     const utcFormatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'UTC',
       year: 'numeric', month: 'numeric', day: 'numeric',
-      hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false
+      hour: 'numeric', minute: 'numeric', second: 'numeric'
     });
-    const utcParts = utcFormatter.formatToParts(date);
 
-    const getVal = (p) => {
-      const o = {};
-      p.forEach(x => { o[x.type] = parseInt(x.value, 10); });
-      return Date.UTC(o.year, o.month - 1, o.day, o.hour, o.minute, o.second);
-    };
-
-    return getVal(parts) - getVal(utcParts);
+    return parseParts(formatter.formatToParts(date)) - parseParts(utcFormatter.formatToParts(date));
   } catch (e) {
     console.error(`Failed to calculate timezone offset for ${timezone}:`, e);
     return 0;
