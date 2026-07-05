@@ -15,7 +15,7 @@
     <span id="menu-badge" class="badge"></span>
   </button>
   <div id="location-bar">
-    <h1 id="page-title">Pressure and Wind prediction</h1>
+    <h1 id="page-title">Weather</h1>
   </div>
   <img id="dog_icon" src="./doggo.png" alt="doggo">
   <div class="svg-container">
@@ -159,7 +159,7 @@ function setLocation(key, label, updateUrl){
     url.searchParams.delete('location');
   }
   history.replaceState(null, '', url);
-  document.getElementById('page-title').textContent = `Pressure and Wind prediction for ${label}`;
+  document.getElementById('page-title').textContent = label;
 
   // Update active state class on drawer location buttons
   const buttons = document.querySelectorAll('.location-btn');
@@ -457,7 +457,7 @@ function reload_graph(){
 
         const area = d3.area()
           .x(d => x(d[0]))
-          .y0(y(0))
+          .y0(title === 'pressure' ? y(0) : height)
           .y1(d => y(d[1]));
 
         // Draw the area
