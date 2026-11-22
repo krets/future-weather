@@ -1,5 +1,13 @@
 [
   {
+    "date": "2026-11-22",
+    "message": "Added a Celsius/Fahrenheit option to the menu."
+  },
+  {
+    "date": "2026-11-22",
+    "message": "Fixed favicon alert timing and out-of-date warnings. The favicon now turns grey when data is out-of-date."
+  },
+  {
     "date": "2025-09-29",
     "message": "Reworked layout for responsive design."
   },
