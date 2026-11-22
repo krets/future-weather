@@ -143,11 +143,13 @@ svg {
     font-size: 1.5rem;
   }
   
-  #drawer-locations-section h4 {
+  #drawer-locations-section h4,
+  #drawer-units-section h4 {
     font-size: 1.5rem;
   }
   
-  .location-btn {
+  .location-btn,
+  .unit-btn {
     font-size: 1.6rem;
     padding: 1em 1.2em;
   }
@@ -190,14 +192,16 @@ svg {
 }
 
 /* Locations Selection inside Drawer */
-#drawer-locations-section {
+#drawer-locations-section,
+#drawer-units-section {
   margin-bottom: 2em;
   text-align: left;
   border-bottom: 1pt solid #444;
   padding-bottom: 1.5em;
 }
 
-#drawer-locations-section h4 {
+#drawer-locations-section h4,
+#drawer-units-section h4 {
   margin: 0 0 0.75em 0;
   color: #aaa;
   font-size: 0.85rem;
@@ -211,7 +215,8 @@ svg {
   gap: 0.5em;
 }
 
-.location-btn {
+.location-btn,
+.unit-btn {
   background-color: rgba(255, 255, 255, 0.05);
   color: #ccc;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -226,18 +231,21 @@ svg {
   text-align: left;
 }
 
-.location-btn:hover {
+.location-btn:hover,
+.unit-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
   border-color: #888;
   color: white;
 }
 
-.location-btn:focus {
+.location-btn:focus,
+.unit-btn:focus {
   outline: none;
   border-color: #fc0;
 }
 
-.location-btn.active {
+.location-btn.active,
+.unit-btn[aria-pressed="true"] {
   background-color: rgba(115, 191, 105, 0.15);
   border-color: #73bf69;
   color: #73bf69;
@@ -251,6 +259,17 @@ svg {
 
 .location-btn.active .checkmark {
   display: inline;
+}
+
+/* Unit Selection inside Drawer */
+#drawer-units-list {
+  display: flex;
+  gap: 0.5em;
+}
+
+.unit-btn {
+  flex: 1;
+  justify-content: center;
 }
 
 /* Notifications in Drawer */

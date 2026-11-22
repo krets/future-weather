@@ -5,7 +5,7 @@
   <title>Future Weather</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="style.css?_=20260704">
+    <link rel="stylesheet" href="style.css?_=20261122">
   </head>
   <body>
   <button id="menu-toggle" aria-label="Open Menu" aria-expanded="false">
@@ -62,6 +62,13 @@
         <h4>Locations</h4>
         <div id="drawer-locations-list" role="listbox" aria-label="Locations"></div>
       </div>
+      <div id="drawer-units-section">
+        <h4 id="drawer-units-heading">Temperature</h4>
+        <div id="drawer-units-list" role="group" aria-labelledby="drawer-units-heading">
+          <button class="unit-btn" data-unit="C" aria-pressed="false">&deg;C</button>
+          <button class="unit-btn" data-unit="F" aria-pressed="false">&deg;F</button>
+        </div>
+      </div>
       <div id="drawer-notifications-section">
         <h4>Recent Changes</h4>
         <div id="updated-info-drawer"></div>
@@ -85,6 +92,35 @@ const units = {
   wind: 'm/s',
   precipitation: 'mm'
 }
+
+// Data is always Celsius; the preference only affects what is displayed.
+const TEMPERATURE_UNIT_KEY = 'future-weather-temperature-unit';
+let temperatureUnit = 'C';
+let updateTemperatureLabels = () => {}; // replaced each time the graph is drawn
+
+function toDisplayValue(title, value){
+  return title === 'temperature' && temperatureUnit === 'F' ? value * 9 / 5 + 32 : value;
+}
+
+function setTemperatureUnit(unit){
+  temperatureUnit = unit === 'F' ? 'F' : 'C';
+  units.temperature = `°${temperatureUnit}`;
+  document.querySelectorAll('.unit-btn').forEach(btn => {
+    btn.setAttribute('aria-pressed', btn.dataset.unit === temperatureUnit);
+  });
+  updateTemperatureLabels();
+}
+
+function initUnitSelector(){
+  document.querySelectorAll('.unit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setTemperatureUnit(btn.dataset.unit);
+      localStorage.setItem(TEMPERATURE_UNIT_KEY, temperatureUnit);
+    });
+  });
+  setTemperatureUnit(localStorage.getItem(TEMPERATURE_UNIT_KEY));
+}
+
 const tooltip = d3.select('body').append('div')
   .attr('id', 'chart-tooltip')
   .attr('class', 'chart-tooltip')
@@ -380,7 +416,7 @@ function reload_graph(){
           .attr('class', 'grid')
           .attr('transform', `translate(0,${height})`)
           .call(xGrid);
-        svg.append('g')
+        const yGridGroup = svg.append('g')
           .attr('class', 'grid')
           .call(yGrid);
 
@@ -448,7 +484,7 @@ function reload_graph(){
           }
         }
 
-        svg.append('text')
+        const annotation = svg.append('text')
           .attr('x', x(closestPoint[0]) + 5)
           .attr('y', y(closestPoint[1]) - 10)
           .attr('class', annotationClass)
@@ -504,23 +540,37 @@ function reload_graph(){
           .selectAll('text')
           .style('fill', '#ddd');
 
-        svg.append('g')
+        const yAxisGroup = svg.append('g')
           .attr('class', 'y-axis '+title)
-          .call(yAxis)
-          .selectAll('text, path, line')
+          .call(yAxis);
+        yAxisGroup.selectAll('text, path, line')
           .style('stroke-width', 2);
         svg.selectAll("g.y-axis text")
            .style("stroke-width", null);
 
         let hours_ahead = Math.round((parsedData[parsedData.length-1][0] - localNowMs)/1000/3600)
 
-        svg.append('text')
+        const chartTitle = svg.append('text')
           .attr('x', width / 2)
           .attr('y', -24)
           .attr('text-anchor', 'middle')
           .style('font-size', '0.9rem')
           .style('fill', '#ccc')
           .text(`${title} (${units[title]}) + ${hours_ahead}h prediction`);
+
+        if (title === 'temperature'){
+          updateTemperatureLabels = () => {
+            // Same pixel range, converted domain: round ticks in either unit
+            const displayY = y.copy().domain(y.domain().map(v => toDisplayValue(title, v)));
+            yGridGroup.call(yGrid.scale(displayY));
+            yAxisGroup.call(yAxis.scale(displayY))
+              .selectAll('path, line')
+              .style('stroke-width', 2);
+            annotation.text(`(${toDisplayValue(title, closestPoint[1]).toFixed(2)}) ${title}`);
+            chartTitle.text(`${title} (${units[title]}) + ${hours_ahead}h prediction`);
+          };
+          updateTemperatureLabels();
+        }
 
         // Hover tracking elements
         const hoverLine = svg.append('line')
@@ -571,7 +621,7 @@ function reload_graph(){
             tooltip
               .html(`
                 <div class="tooltip-time">${d3.utcFormat('%A, %H:%M')(new Date(d[0]))}</div>
-                <div class="tooltip-value">${title.charAt(0).toUpperCase() + title.slice(1)}: <strong>${d[1].toFixed(2)}</strong> ${units[title]}</div>
+                <div class="tooltip-value">${title.charAt(0).toUpperCase() + title.slice(1)}: <strong>${toDisplayValue(title, d[1]).toFixed(2)}</strong> ${units[title]}</div>
               `)
               .style('left', (event.pageX + 15) + 'px')
               .style('top', (event.pageY - 28) + 'px')
@@ -802,6 +852,7 @@ function initMenuDrawer() {
 update_changelog();
 update_notices();
 initMenuDrawer();
+initUnitSelector();
 initLocationSelector();
 set_icon_color();
 setInterval(reload_graph, 300000);
